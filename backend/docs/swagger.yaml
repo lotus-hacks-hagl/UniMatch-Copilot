@@ -1,0 +1,707 @@
+basePath: /api/v1
+definitions:
+  dto.Analytics:
+    properties:
+      auto_approval_rate:
+        type: number
+      country_distribution:
+        items:
+          $ref: '#/definitions/dto.CountryCount'
+        type: array
+      top_universities:
+        items:
+          $ref: '#/definitions/dto.UniversityCount'
+        type: array
+    type: object
+  dto.CaseCreatedResponse:
+    properties:
+      case_id:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.CasesByDay:
+    properties:
+      count:
+        type: integer
+      date:
+        type: string
+    type: object
+  dto.CountryCount:
+    properties:
+      count:
+        type: integer
+      country:
+        type: string
+    type: object
+  dto.CrawlAllResponse:
+    properties:
+      message:
+        type: string
+      triggered:
+        type: integer
+    type: object
+  dto.CreateCaseRequest:
+    properties:
+      achievements:
+        type: string
+      budget_usd_per_year:
+        minimum: 0
+        type: integer
+      extracurriculars:
+        type: string
+      full_name:
+        type: string
+      gpa_normalized:
+        maximum: 4
+        minimum: 0
+        type: number
+      gpa_raw:
+        type: number
+      gpa_scale:
+        type: number
+      ielts_breakdown:
+        $ref: '#/definitions/dto.IeltsBreakdown'
+      ielts_overall:
+        type: number
+      intended_major:
+        type: string
+      personal_statement_notes:
+        type: string
+      preferred_countries:
+        items:
+          type: string
+        type: array
+      sat_total:
+        type: integer
+      scholarship_required:
+        type: boolean
+      target_intake:
+        type: string
+      toefl_total:
+        type: integer
+    required:
+    - budget_usd_per_year
+    - full_name
+    - gpa_normalized
+    type: object
+  dto.CreateUniversityRequest:
+    properties:
+      acceptance_rate:
+        type: number
+      available_majors:
+        items:
+          type: string
+        type: array
+      counselor_notes:
+        type: string
+      country:
+        type: string
+      gpa_expectation_normalized:
+        type: number
+      group_tag:
+        type: string
+      ielts_min:
+        type: number
+      name:
+        type: string
+      qs_rank:
+        type: integer
+      sat_required:
+        type: boolean
+      scholarship_available:
+        type: boolean
+      scholarship_notes:
+        type: string
+      tuition_usd_per_year:
+        type: integer
+    required:
+    - name
+    type: object
+  dto.DashboardStats:
+    properties:
+      active_crawls:
+        type: integer
+      ai_confidence_avg:
+        type: number
+      avg_processing_minutes:
+        type: number
+      awaiting_review:
+        type: integer
+      cases_today:
+        type: integer
+    type: object
+  dto.EscalationTrend:
+    properties:
+      count:
+        type: integer
+      date:
+        type: string
+    type: object
+  dto.IeltsBreakdown:
+    properties:
+      listening:
+        type: number
+      reading:
+        type: number
+      speaking:
+        type: number
+      writing:
+        type: number
+    type: object
+  dto.ReportStatusResponse:
+    properties:
+      case_id:
+        type: string
+      report_url:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.UniversityCount:
+    properties:
+      count:
+        type: integer
+      name:
+        type: string
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      message:
+        type: string
+    type: object
+  response.Meta:
+    properties:
+      has_next:
+        type: boolean
+      has_prev:
+        type: boolean
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      meta:
+        $ref: '#/definitions/response.Meta'
+      success:
+        type: boolean
+    type: object
+  swagger.SwaggerError:
+    properties:
+      code:
+        example: NOT_FOUND
+        type: string
+      details:
+        example: User with ID 123 not found
+        type: string
+      message:
+        example: Resource not found
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Backend API for UniMatch Copilot AI system
+  title: UniMatch Copilot API
+  version: "1.0"
+paths:
+  /activity-log:
+    get:
+      description: Fetch paginated recent system events
+      parameters:
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Get recent activity log
+      tags:
+      - dashboard
+  /cases:
+    get:
+      description: Fetch paginated list of cases with optional status filter
+      parameters:
+      - description: 'Filter by case status: pending, processing, done, human_review,
+          failed'
+        in: query
+        name: status
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: List cases
+      tags:
+      - cases
+    post:
+      consumes:
+      - application/json
+      description: Create student and case records, triggers AI profiling
+      parameters:
+      - description: Student Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCaseRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CaseCreatedResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Create a new case
+      tags:
+      - cases
+  /cases/{id}:
+    get:
+      description: Retrieve a case and its active recommendations by UUID
+      parameters:
+      - description: Case UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Get case details
+      tags:
+      - cases
+  /cases/{id}/report:
+    post:
+      description: Queue an async report generation job for a ready case
+      parameters:
+      - description: Case UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ReportStatusResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Request PDF report generation
+      tags:
+      - cases
+  /cases/count:
+    get:
+      description: Get total cases count, optionally filtered by status
+      parameters:
+      - description: Filter by case status
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Count cases
+      tags:
+      - cases
+  /dashboard/analytics:
+    get:
+      description: Get auto-approval rates and top universities/countries distributions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.Analytics'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Get detailed analytics
+      tags:
+      - dashboard
+  /dashboard/cases-by-day:
+    get:
+      description: Get cases created per day chart data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.CasesByDay'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Get cases trend
+      tags:
+      - dashboard
+  /dashboard/escalation-trend:
+    get:
+      description: Get escalations per day chart data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.EscalationTrend'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Get escalation trend
+      tags:
+      - dashboard
+  /dashboard/stats:
+    get:
+      description: Get high-level application statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DashboardStats'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Get dashboard stats
+      tags:
+      - dashboard
+  /universities:
+    get:
+      description: Fetch paginated list of universities with optional filters
+      parameters:
+      - description: Filter by country
+        in: query
+        name: country
+        type: string
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: List universities
+      tags:
+      - universities
+    post:
+      consumes:
+      - application/json
+      description: Create a new university record manually
+      parameters:
+      - description: University Information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUniversityRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Create university
+      tags:
+      - universities
+  /universities/crawl-active:
+    get:
+      description: Get the number of universities currently pending crawl results
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Count active crawl jobs
+      tags:
+      - universities
+  /universities/crawl-all:
+    post:
+      description: Submits async crawl jobs for universities that haven't been crawled
+        in 24h
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CrawlAllResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Trigger crawl for all universities
+      tags:
+      - universities
+swagger: "2.0"
