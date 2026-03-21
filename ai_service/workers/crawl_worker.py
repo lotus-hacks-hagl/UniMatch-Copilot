@@ -1,7 +1,8 @@
 import json
 import logging
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
+from pathlib import Path
 from claude_agent_sdk import (
     query,
     ClaudeAgentOptions,
@@ -27,6 +28,10 @@ async def process_crawl_job(job: dict):
     if not config.TINYFISH_API_KEY:
         raise RuntimeError(
             "Missing TINYFISH_API_KEY in environment. Configure it in ai_service/.env and restart containers."
+        )
+    if not config.EXA_API_KEY:
+        raise RuntimeError(
+            "Missing EXA_API_KEY in environment. Configure it in ai_service/.env and restart containers."
         )
 
     update_job(job_id, "processing")
@@ -64,7 +69,10 @@ and write them to Neo4j using write_neo4j_cypher.
     neo4j_env["NEO4J_PASSWORD"] = config.NEO4J_PASSWORD
 
     options = ClaudeAgentOptions(
-        system_prompt=system_prompt,
+        system_prompt={
+            "type": "preset",
+            "preset": "claude_code",
+        },
         permission_mode="bypassPermissions",
         env=build_claude_cli_env(),
         mcp_servers={
@@ -84,7 +92,7 @@ and write them to Neo4j using write_neo4j_cypher.
                 "args": ["-y", "agentql-mcp"],
                 "env": {
                     "AGENTQL_API_KEY": config.AGENTQL_API_KEY,
-                }
+                },
             },
         },
         setting_sources=["local", "project", "user"],
@@ -162,7 +170,7 @@ and write them to Neo4j using write_neo4j_cypher.
         "crawl_status": "changed" if changes else "ok",
         "changes_detected": changes,
         "source_urls": source_urls,
-        "crawled_at": datetime.utcnow().isoformat() + "Z",
+        "crawled_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     }
 
     if callback_url:
