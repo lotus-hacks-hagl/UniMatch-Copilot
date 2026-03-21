@@ -53,7 +53,39 @@ func Auth(cfg *config.Config) gin.HandlerFunc {
 		c.Set("user_id", claims["user_id"])
 		c.Set("username", claims["username"])
 		c.Set("role", claims["role"])
+		c.Set("is_verified", claims["is_verified"])
 
+		c.Next()
+	}
+}
+
+func RequireAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists || role != "admin" {
+			response.Fail(c, http.StatusForbidden, "FORBIDDEN", "Admin access required")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func RequireVerified() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		isVerifiedRaw, exists := c.Get("is_verified")
+		if !exists {
+			response.Fail(c, http.StatusForbidden, "FORBIDDEN", "Account verification status unknown")
+			c.Abort()
+			return
+		}
+		
+		isVerified, ok := isVerifiedRaw.(bool)
+		if !ok || !isVerified {
+			response.Fail(c, http.StatusForbidden, "FORBIDDEN", "Account not verified. Please wait for admin approval.")
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }

@@ -46,6 +46,7 @@ func main() {
 	caseSvc := service.NewCaseService(db, caseRepo, actRepo, aiClient, cfg)
 	uniSvc  := service.NewUniversityService(db, uniRepo, actRepo, aiClient, cfg)
 	dashSvc := service.NewDashboardService(dashRepo, actRepo)
+	adminSvc := service.NewAdminService(userRepo)
 
 	// 6. Handlers
 	authH     := handler.NewAuthHandler(authSvc)
@@ -53,9 +54,10 @@ func main() {
 	uniH      := handler.NewUniversitiesHandler(uniSvc)
 	dashH     := handler.NewDashboardHandler(dashSvc)
 	internalH := handler.NewInternalHandler(caseSvc, uniSvc)
+	adminH    := handler.NewAdminHandler(adminSvc)
 
 	// 7. Router
-	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH)
+	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH, adminH)
 
 	log.Printf("🚀 UniMatch-BE running on :%s (env: %s)", cfg.Port, cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

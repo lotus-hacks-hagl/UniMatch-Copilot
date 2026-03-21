@@ -145,18 +145,38 @@ func (s *caseService) GetByID(ctx context.Context, id uuid.UUID) (*model.Case, *
 	return c, nil
 }
 
-func (s *caseService) List(ctx context.Context, status string, page, limit int) ([]model.Case, int64, *apperror.AppError) {
+func (s *caseService) List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, *apperror.AppError) {
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
-	cases, total, err := s.caseRepo.FindAll(ctx, status, page, limit)
+	cases, total, err := s.caseRepo.FindAll(ctx, status, assignedToID, filterNone, page, limit)
 	if err != nil {
 		return nil, 0, apperror.Internal(err, "failed to list cases")
 	}
 	return cases, total, nil
+}
+
+func (s *caseService) Claim(ctx context.Context, id uuid.UUID, userID uuid.UUID) *apperror.AppError {
+	err := s.caseRepo.Claim(ctx, id, userID)
+	if err != nil {
+		if err.Error() == "case already assigned" {
+			return apperror.BadRequest(err.Error())
+		}
+		return apperror.Internal(err, "failed to claim case")
+	}
+
+	// Log activity
+	s.actRepo.Create(ctx, &model.ActivityLog{
+		CaseID:      &id,
+		UserID:      &userID,
+		EventType:   model.EventProcessingStarted, // Or a new EventCaseClaimed if defined
+		Description: "Case claimed by counselor",
+	})
+
+	return nil
 }
 
 func (s *caseService) Count(ctx context.Context, status string) (int64, *apperror.AppError) {
@@ -198,6 +218,14 @@ func (s *caseService) RequestReport(ctx context.Context, caseID uuid.UUID) (*dto
 	}
 
 	return &dto.ReportStatusResponse{CaseID: caseID.String(), Status: "generating"}, nil
+}
+
+func (s *caseService) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) *apperror.AppError {
+	err := s.caseRepo.UpdateFields(ctx, id, updates)
+	if err != nil {
+		return apperror.Internal(err, "failed to update case")
+	}
+	return nil
 }
 
 // HandleJobDone — routes AI callbacks to appropriate handlers

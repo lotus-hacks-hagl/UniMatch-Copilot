@@ -3,14 +3,26 @@ import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useCasesStore } from '../stores/casesStore'
+import { useAuthStore } from '../stores/authStore'
 import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const casesStore = useCasesStore()
+const authStore = useAuthStore()
 const { cases, stats, filter: activeFilter } = storeToRefs(casesStore)
 const { t } = useI18n()
 
 const filters = ['All cases', 'Done', 'Processing', 'Human review']
+
+const handleClaim = async (event, id) => {
+  event.stopPropagation()
+  try {
+    await casesStore.claimCase(id)
+    alert('Case claimed successfully!')
+  } catch (err) {
+    alert('Failed to claim case')
+  }
+}
 
 onMounted(() => {
   casesStore.fetchStats()
@@ -142,6 +154,7 @@ const formatRelativeTime = (dateStr) => {
               <th class="px-5 py-3 font-medium">{{ $t('cases.table.aiMatch') }}</th>
               <th class="px-5 py-3 font-medium cursor-pointer flex items-center gap-1 hover:text-text hover:underline decoration-primary/20 underline-offset-4">{{ $t('cases.table.confidence') }} <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></th>
               <th class="px-5 py-3 font-medium">{{ $t('cases.table.status') }}</th>
+              <th class="px-5 py-3 font-medium">Assignee</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-black/5 text-[13px]">
@@ -195,13 +208,28 @@ const formatRelativeTime = (dateStr) => {
                   <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border" :class="getStatusClass(c.status)">
                     {{ getStatusLabel(c.status) }}
                   </span>
-                  <span class="text-[10px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ml-2">{{ formatRelativeTime(c.updated_at) }}</span>
                 </div>
+              </td>
+              <td class="px-6 py-4">
+                <div v-if="c.assigned_to" class="flex items-center text-xs text-[#6b6a62]">
+                  <div class="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center mr-2 text-[10px] font-bold">
+                    {{ c.assigned_to.username.charAt(0).toUpperCase() }}
+                  </div>
+                  {{ c.assigned_to.username }}
+                </div>
+                <button 
+                  v-else-if="!authStore.isAdmin"
+                  @click="handleClaim($event, c.id)"
+                  class="bg-[#a32d2d] text-white px-3 py-1 rounded text-[11px] font-bold hover:bg-[#821419] transition-colors"
+                >
+                  Claim
+                </button>
+                <span v-else class="text-[11px] text-[#6b6a62] italic">Pool</span>
               </td>
             </tr>
           </tbody>
         </table>
-        <div v-else class="flex flex-col items-center justify-center p-12 h-[300px] bg-surfacce rounded-lg border-2 border-dashed border-black/10 mx-5 my-5">
+        <div v-else class="flex flex-col items-center justify-center p-12 h-[300px] bg-surface rounded-lg border-2 border-dashed border-black/10 mx-5 my-5">
           <svg class="w-10 h-10 text-black/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           <p class="text-[13px] text-text-muted">{{ $t('cases.noCases') }}</p>
         </div>

@@ -139,7 +139,23 @@
     }
   },
   "students": {
-    "title": "Sinh viên",
     "placeholder": "Nội dung phần Sinh viên đang được xây dựng."
+  },
+  "auth": {
+    "loginTitle": "Đăng nhập UniMatch",
+    "registerTitle": "Tham gia UniMatch",
+    "username": "Tên đăng nhập",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "signIn": "Đăng nhập",
+    "createAccount": "Tạo tài khoản",
+    "processing": "Đang xử lý...",
+    "noAccount": "Chưa có tài khoản?",
+    "hasAccount": "Đã có tài khoản?",
+    "errors": {
+      "passwordMismatch": "Mật khẩu xác nhận không khớp",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 6 ký tự",
+      "usernameTooShort": "Tên đăng nhập phải có ít nhất 3 ký tự"
+    }
   }
 }

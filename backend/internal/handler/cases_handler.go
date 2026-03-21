@@ -71,10 +71,29 @@ func (h *CasesHandler) Create(c *gin.Context) {
 // @Router /cases [get]
 func (h *CasesHandler) List(c *gin.Context) {
 	status := c.Query("status")
+	assignedTo := c.Query("assigned_to")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
-	cases, total, appErr := h.svc.List(c.Request.Context(), status, page, limit)
+	var assignedToID *uuid.UUID
+	var filterNone bool
+
+	if assignedTo == "me" {
+		uid, exists := c.Get("user_id")
+		if exists {
+			parsedID, _ := uuid.Parse(uid.(string))
+			assignedToID = &parsedID
+		}
+	} else if assignedTo == "none" {
+		filterNone = true
+	} else if assignedTo != "" {
+		parsedID, err := uuid.Parse(assignedTo)
+		if err == nil {
+			assignedToID = &parsedID
+		}
+	}
+
+	cases, total, appErr := h.svc.List(c.Request.Context(), status, assignedToID, filterNone, page, limit)
 	if appErr != nil {
 		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
 		return
@@ -89,6 +108,41 @@ func (h *CasesHandler) List(c *gin.Context) {
 		HasNext:    page < totalPages,
 		HasPrev:    page > 1,
 	})
+}
+
+// Claim godoc
+// @Summary Claim a case
+// @Description Take a case from the public pool (Teacher only)
+// @Tags cases
+// @Produce json
+// @Param id path string true "Case UUID"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 401 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
+// @Router /cases/{id}/claim [post]
+func (h *CasesHandler) Claim(c *gin.Context) {
+	caseID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "BAD_REQUEST", "invalid case id")
+		return
+	}
+
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "user not authenticated")
+		return
+	}
+	userID, _ := uuid.Parse(userIDStr.(string))
+
+	appErr := h.svc.Claim(c.Request.Context(), caseID, userID)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, nil)
 }
 
 // Count godoc
@@ -161,4 +215,20 @@ func (h *CasesHandler) RequestReport(c *gin.Context) {
 		return
 	}
 	response.OK(c, result)
+}
+
+func (h *CasesHandler) Update(c *gin.Context) {
+	id, _ := uuid.Parse(c.Param("id"))
+	var updates map[string]interface{}
+	if err := c.ShouldBindJSON(&updates); err != nil {
+		response.Fail(c, 400, "INVALID_INPUT", err.Error())
+		return
+	}
+
+	if err := h.svc.Update(c.Request.Context(), id, updates); err != nil {
+		response.Fail(c, err.HTTPStatus, err.Code, err.Message)
+		return
+	}
+
+	response.OK(c, nil)
 }

@@ -4,6 +4,7 @@ import vi from './locales/vi.json'
 
 const i18n = createI18n({
   legacy: false, // Vue 3 Composition API
+  globalInjection: true,
   locale: 'en',
   fallbackLocale: 'vi',
   messages: {

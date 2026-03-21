@@ -13,7 +13,9 @@ import (
 type CaseService interface {
 	Create(ctx context.Context, req dto.CreateCaseRequest) (*dto.CaseCreatedResponse, *apperror.AppError)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Case, *apperror.AppError)
-	List(ctx context.Context, status string, page, limit int) ([]model.Case, int64, *apperror.AppError)
+	List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, *apperror.AppError)
+	Claim(ctx context.Context, id uuid.UUID, userID uuid.UUID) *apperror.AppError
+	Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) *apperror.AppError
 	Count(ctx context.Context, status string) (int64, *apperror.AppError)
 	RequestReport(ctx context.Context, caseID uuid.UUID) (*dto.ReportStatusResponse, *apperror.AppError)
 	HandleJobDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError

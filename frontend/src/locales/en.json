@@ -139,7 +139,23 @@
     }
   },
   "students": {
-    "title": "Students",
     "placeholder": "Placeholder for Students."
+  },
+  "auth": {
+    "loginTitle": "Login to UniMatch",
+    "registerTitle": "Join UniMatch",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "signIn": "Sign In",
+    "createAccount": "Create Account",
+    "processing": "Processing...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "usernameTooShort": "Username must be at least 3 characters"
+    }
   }
 }

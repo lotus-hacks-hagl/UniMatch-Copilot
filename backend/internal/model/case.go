@@ -19,6 +19,8 @@ type Case struct {
 	Base
 	StudentID            uuid.UUID        `json:"student_id" gorm:"type:uuid;not null"`
 	Student              *Student         `json:"student,omitempty" gorm:"foreignKey:StudentID"`
+	AssignedToID         *uuid.UUID       `json:"assigned_to_id" gorm:"type:uuid"`
+	AssignedTo           *User            `json:"assigned_to,omitempty" gorm:"foreignKey:AssignedToID"`
 	Status               string           `json:"status" gorm:"default:'pending'"`
 	AiJobID              *uuid.UUID       `json:"ai_job_id" gorm:"type:uuid"`
 	AiConfidence         *float64         `json:"ai_confidence"`

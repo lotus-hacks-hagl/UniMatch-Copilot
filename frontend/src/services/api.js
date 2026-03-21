@@ -7,10 +7,21 @@ export const api = axios.create({
   }
 })
 
+// Initialize token if exists
+const token = localStorage.getItem('token')
+if (token) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
+
 // Optional: Interceptors for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized (e.g. logout)
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    }
     console.error('API Error:', error)
     return Promise.reject(error)
   }

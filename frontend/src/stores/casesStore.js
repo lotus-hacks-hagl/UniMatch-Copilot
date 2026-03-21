@@ -15,16 +15,19 @@ export const useCasesStore = defineStore('cases', {
     total: 0
   }),
   actions: {
-    async fetchCases(filterStatus = 'All') {
+    async fetchCases(filterStatus = 'All', assignedTo = null) {
       this.loading = true
       this.filter = filterStatus
       let queryStatus = filterStatus.toLowerCase().replace(' ', '_')
       if (filterStatus === 'All') queryStatus = 'all'
       
       try {
-        const response = await api.get('/cases', {
-          params: { status: queryStatus, page: 1, limit: 20 }
-        })
+        const params = { status: queryStatus, page: 1, limit: 100 }
+        if (assignedTo) {
+          params.assigned_to = assignedTo
+        }
+
+        const response = await api.get('/cases', { params })
         this.cases = response.data.cases || []
         this.total = response.data.total || 0
       } catch (error) {
@@ -32,6 +35,15 @@ export const useCasesStore = defineStore('cases', {
         this.cases = []
       } finally {
         this.loading = false
+      }
+    },
+    async claimCase(caseId) {
+      try {
+        await api.post(`/cases/${caseId}/claim`)
+        return true
+      } catch (error) {
+        console.error('Failed to claim case', error)
+        throw error
       }
     },
     async fetchStats() {

@@ -14,5 +14,6 @@ type AuthResponse struct {
 	Token     string `json:"token"`
 	ExpiresIn int64  `json:"expires_in"` // Unix timestamp
 	Username  string `json:"username"`
-	Role      string `json:"role"`
+	Role       string `json:"role"`
+	IsVerified bool   `json:"is_verified"`
 }

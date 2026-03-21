@@ -20,6 +20,7 @@ func SetupRouter(
 	uniH      *handler.UniversitiesHandler,
 	dashH     *handler.DashboardHandler,
 	internalH *handler.InternalHandler,
+	adminH    *handler.AdminHandler,
 ) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -53,36 +54,51 @@ func SetupRouter(
 		protected := api.Group("/")
 		protected.Use(middleware.Auth(cfg))
 		{
-			// Cases routes
-			cases := protected.Group("/cases")
+			// Admin only routes
+			admin := protected.Group("/admin")
+			admin.Use(middleware.RequireAdmin())
 			{
-				cases.POST("", casesH.Create)
-				cases.GET("", casesH.List)
-				cases.GET("/count", casesH.Count)
-				cases.GET("/:id", casesH.GetByID)
-				cases.POST("/:id/report", casesH.RequestReport)
+				admin.GET("/teachers", adminH.ListTeachers)
+				admin.PUT("/teachers/:id/verify", adminH.VerifyTeacher)
 			}
 
-			// Universities routes
-			unis := protected.Group("/universities")
+			// Teacher/Admin verified routes
+			verified := protected.Group("/")
+			verified.Use(middleware.RequireVerified())
 			{
-				unis.GET("", uniH.List)
-				unis.POST("", uniH.Create)
-				unis.POST("/crawl-all", uniH.CrawlAll)
-				unis.GET("/crawl-active", uniH.CrawlActiveCount)
-			}
+				// Cases routes
+				cases := verified.Group("/cases")
+				{
+					cases.POST("", casesH.Create)
+					cases.GET("", casesH.List)
+					cases.GET("/count", casesH.Count)
+					cases.GET("/:id", casesH.GetByID)
+					cases.POST("/:id/claim", casesH.Claim)
+			cases.PUT("/:id", casesH.Update)
+					cases.POST("/:id/report", casesH.RequestReport)
+				}
 
-			// Dashboard routes
-			dash := protected.Group("/dashboard")
-			{
-				dash.GET("/stats", dashH.Stats)
-				dash.GET("/cases-by-day", dashH.CasesByDay)
-				dash.GET("/escalation-trend", dashH.EscalationTrend)
-				dash.GET("/analytics", dashH.Analytics)
-			}
+				// Universities routes
+				unis := verified.Group("/universities")
+				{
+					unis.GET("", uniH.List)
+					unis.POST("", uniH.Create)
+					unis.POST("/crawl-all", uniH.CrawlAll)
+					unis.GET("/crawl-active", uniH.CrawlActiveCount)
+				}
 
-			// Activity log
-			protected.GET("/activity-log", dashH.ActivityLog)
+				// Dashboard routes
+				dash := verified.Group("/dashboard")
+				{
+					dash.GET("/stats", dashH.Stats)
+					dash.GET("/cases-by-day", dashH.CasesByDay)
+					dash.GET("/escalation-trend", dashH.EscalationTrend)
+					dash.GET("/analytics", dashH.Analytics)
+				}
+
+				// Activity log
+				verified.GET("/activity-log", dashH.ActivityLog)
+			}
 		}
 	}
 

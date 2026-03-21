@@ -36,7 +36,7 @@ func (r *caseRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.Cas
 	return &c, err
 }
 
-func (r *caseRepository) FindAll(ctx context.Context, status string, page, limit int) ([]model.Case, int64, error) {
+func (r *caseRepository) FindAll(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, error) {
 	var cases []model.Case
 	var total int64
 
@@ -45,11 +45,30 @@ func (r *caseRepository) FindAll(ctx context.Context, status string, page, limit
 		q = q.Where("status = ?", status)
 	}
 
+	if assignedToID != nil {
+		q = q.Where("assigned_to_id = ?", assignedToID)
+	} else if filterNone {
+		q = q.Where("assigned_to_id IS NULL")
+	}
+
 	q.Count(&total)
 	err := q.Order("created_at DESC").
 		Offset((page - 1) * limit).Limit(limit).
 		Find(&cases).Error
 	return cases, total, err
+}
+
+func (r *caseRepository) Claim(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var c model.Case
+		if err := tx.First(&c, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if c.AssignedToID != nil {
+			return errors.New("case already assigned")
+		}
+		return tx.Model(&c).Update("assigned_to_id", userID).Error
+	})
 }
 
 func (r *caseRepository) Update(ctx context.Context, c *model.Case) error {

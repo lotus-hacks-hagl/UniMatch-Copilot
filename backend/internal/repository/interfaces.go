@@ -12,9 +12,10 @@ import (
 type CaseRepository interface {
 	Create(ctx context.Context, c *model.Case) error
 	FindByID(ctx context.Context, id uuid.UUID) (*model.Case, error)
-	FindAll(ctx context.Context, status string, page, limit int) ([]model.Case, int64, error)
+	FindAll(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, error)
 	Update(ctx context.Context, c *model.Case) error
 	UpdateFields(ctx context.Context, id uuid.UUID, fields map[string]interface{}) error
+	Claim(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 	Count(ctx context.Context, status string) (int64, error)
 }
 

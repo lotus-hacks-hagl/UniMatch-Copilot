@@ -29,13 +29,22 @@ func NewAuthService(userRepo repository.UserRepository, cfg *config.Config) Auth
 }
 
 func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*dto.AuthResponse, *apperror.AppError) {
-	// Rule: Maintain single internal account
 	count, err := s.userRepo.Count(ctx)
 	if err != nil {
 		return nil, apperror.Internal(err, "failed to count users")
 	}
-	if count > 0 {
-		return nil, apperror.Forbidden("only one internal account is allowed, registration blocked")
+
+	// Check if user already exists
+	existingUser, _ := s.userRepo.FindByUsername(ctx, req.Username)
+	if existingUser != nil {
+		return nil, apperror.Conflict("Username already taken")
+	}
+	
+	role := "teacher"
+	isVerified := false
+	if count == 0 {
+		role = "admin"
+		isVerified = true
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -46,7 +55,8 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 	user := &model.User{
 		Username:     req.Username,
 		PasswordHash: string(hash),
-		Role:         "admin",
+		Role:         role,
+		IsVerified:   isVerified,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -59,10 +69,11 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 	}
 
 	return &dto.AuthResponse{
-		Token:     token,
-		ExpiresIn: expiresAt,
-		Username:  user.Username,
-		Role:      user.Role,
+		Token:      token,
+		ExpiresIn:  expiresAt,
+		Username:   user.Username,
+		Role:       user.Role,
+		IsVerified: user.IsVerified,
 	}, nil
 }
 
@@ -83,20 +94,22 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Aut
 	}
 
 	return &dto.AuthResponse{
-		Token:     token,
-		ExpiresIn: expiresAt,
-		Username:  user.Username,
-		Role:      user.Role,
+		Token:      token,
+		ExpiresIn:  expiresAt,
+		Username:   user.Username,
+		Role:       user.Role,
+		IsVerified: user.IsVerified,
 	}, nil
 }
 
 func (s *authService) generateToken(user *model.User) (string, int64, *apperror.AppError) {
 	exp := time.Now().Add(24 * time.Hour).Unix()
 	claims := jwt.MapClaims{
-		"user_id":  user.ID.String(),
-		"username": user.Username,
-		"role":     user.Role,
-		"exp":      exp,
+		"user_id":     user.ID.String(),
+		"username":    user.Username,
+		"role":        user.Role,
+		"is_verified": user.IsVerified,
+		"exp":         exp,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

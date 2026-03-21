@@ -12,6 +12,8 @@ type UserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	FindByUsername(ctx context.Context, username string) (*model.User, error)
 	Count(ctx context.Context) (int64, error)
+	ListTeachers(ctx context.Context) ([]*model.User, error)
+	UpdateVerificationStatus(ctx context.Context, id string, isVerified bool) error
 }
 
 type userRepository struct {
@@ -39,4 +41,14 @@ func (r *userRepository) Count(ctx context.Context) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&model.User{}).Count(&count).Error
 	return count, err
+}
+
+func (r *userRepository) ListTeachers(ctx context.Context) ([]*model.User, error) {
+	var users []*model.User
+	err := r.db.WithContext(ctx).Where("role = ?", "teacher").Find(&users).Error
+	return users, err
+}
+
+func (r *userRepository) UpdateVerificationStatus(ctx context.Context, id string, isVerified bool) error {
+	return r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("is_verified", isVerified).Error
 }
