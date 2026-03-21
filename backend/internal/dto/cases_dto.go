@@ -9,7 +9,7 @@ import (
 
 type CreateCaseRequest struct {
 	FullName               string   `json:"full_name" validate:"required"`
-	GpaNormalized          float64  `json:"gpa_normalized" validate:"required,min=0,max=4"`
+	GpaNormalized          *float64 `json:"gpa_normalized" validate:"required,min=0,max=4"`
 	GpaRaw                 float64  `json:"gpa_raw"`
 	GpaScale               float64  `json:"gpa_scale"`
 	IeltsOverall           *float64 `json:"ielts_overall"`
@@ -17,7 +17,7 @@ type CreateCaseRequest struct {
 	SatTotal               *int     `json:"sat_total"`
 	ToeflTotal             *int     `json:"toefl_total"`
 	IntendedMajor          string   `json:"intended_major"`
-	BudgetUsdPerYear       int      `json:"budget_usd_per_year" validate:"required,min=0"`
+	BudgetUsdPerYear       *int     `json:"budget_usd_per_year" validate:"min=0"`
 	PreferredCountries     []string `json:"preferred_countries"`
 	TargetIntake           string   `json:"target_intake"`
 	ScholarshipRequired    bool     `json:"scholarship_required"`

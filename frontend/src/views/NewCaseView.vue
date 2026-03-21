@@ -14,6 +14,7 @@ const form = ref({
   gpa_raw: '',
   gpa_scale: '4.0',
   ielts_overall: '',
+  sat_total: '',
   intended_major: '',
   preferred_countries: [],
   budget_usd_per_year: '',
@@ -29,21 +30,33 @@ const prevStep = () => {
 }
 
 const submitForm = async () => {
+  // Validation: Either IELTS or SAT is required by backend
+  if (!form.value.ielts_overall && !form.value.sat_total) {
+    alert('Please provide either IELTS or SAT score.')
+    currentStep.value = 1
+    return
+  }
+
   isSubmitting.value = true
   try {
     // Basic normalization of strings to types
+    const raw = parseFloat(form.value.gpa_raw) || 0
+    const scale = parseFloat(form.value.gpa_scale) || 4.0
+    const normalized = (raw / scale) * 4.0
+
     const payload = {
       ...form.value,
-      gpa_raw: parseFloat(form.value.gpa_raw) || 0,
-      gpa_scale: parseFloat(form.value.gpa_scale) || 4.0,
-      ielts_overall: parseFloat(form.value.ielts_overall) || 0,
-      budget_usd_per_year: parseInt(form.value.budget_usd_per_year.replace(/\D/g,'')) || 0,
+      gpa_raw: raw,
+      gpa_scale: scale,
+      gpa_normalized: parseFloat(normalized.toFixed(2)),
+      ielts_overall: parseFloat(form.value.ielts_overall) || null,
+      sat_total: parseInt(form.value.sat_total) || null,
+      budget_usd_per_year: parseInt(form.value.budget_usd_per_year.toString().replace(/\D/g,'')) || 0,
     }
     const response = await api.post('/cases', payload)
     
-    // Redirect to new case details page
-    if (response.data && response.data.case_id) {
-      router.push('/cases/' + response.data.case_id)
+    if (response.data?.success && response.data?.data?.case_id) {
+      router.push('/cases/' + response.data.data.case_id)
     } else {
       router.push('/cases')
     }
@@ -116,6 +129,10 @@ const toggleCountry = (code) => {
           <div>
             <label class="block text-[13px] font-medium text-text mb-1.5">IELTS Score</label>
             <input v-model="form.ielts_overall" type="number" step="0.5" max="9.0" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="7.5" />
+          </div>
+          <div>
+            <label class="block text-[13px] font-medium text-text mb-1.5">SAT Total</label>
+            <input v-model="form.sat_total" type="number" step="10" min="400" max="1600" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="1450" />
           </div>
         </div>
       </div>

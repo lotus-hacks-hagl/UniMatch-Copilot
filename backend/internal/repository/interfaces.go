@@ -39,3 +39,9 @@ type DashboardRepository interface {
 	GetEscalationTrend(ctx context.Context) ([]dto.EscalationTrend, error)
 	GetAnalytics(ctx context.Context) (*dto.Analytics, error)
 }
+
+type StudentRepository interface {
+	FindAll(ctx context.Context, page, limit int) ([]model.Student, int64, error)
+	Count(ctx context.Context) (int64, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*model.Student, error)
+}

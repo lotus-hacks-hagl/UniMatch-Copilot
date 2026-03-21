@@ -21,6 +21,7 @@ func SetupRouter(
 	dashH     *handler.DashboardHandler,
 	internalH *handler.InternalHandler,
 	adminH    *handler.AdminHandler,
+	studentH  *handler.StudentHandler,
 ) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -98,6 +99,13 @@ func SetupRouter(
 
 				// Activity log
 				verified.GET("/activity-log", dashH.ActivityLog)
+
+				// Students routes
+				students := verified.Group("/students")
+				{
+					students.GET("", studentH.List)
+					students.GET("/:id", studentH.GetByID)
+				}
 			}
 		}
 	}

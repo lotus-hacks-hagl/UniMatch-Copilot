@@ -34,8 +34,10 @@ const sortedRecommendations = computed(() => {
 const fetchCase = async () => {
   try {
     const res = await api.get('/cases/' + route.params.id)
-    caseData.value = res.data
-    editedSummary.value = caseData.value.profile_summary?.main_opinion || ''
+    if (res.data?.success) {
+      caseData.value = res.data.data
+      editedSummary.value = caseData.value.profile_summary?.main_opinion || ''
+    }
   } catch (err) {
     console.error('Fetch case failed', err)
   } finally {

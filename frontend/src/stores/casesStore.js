@@ -28,8 +28,8 @@ export const useCasesStore = defineStore('cases', {
         }
 
         const response = await api.get('/cases', { params })
-        this.cases = response.data.cases || []
-        this.total = response.data.total || 0
+        this.cases = response.data.data || []
+        this.total = response.data.meta?.total || 0
       } catch (error) {
         console.error('Failed to fetch cases', error)
         this.cases = []
@@ -49,8 +49,8 @@ export const useCasesStore = defineStore('cases', {
     async fetchStats() {
       try {
         const response = await api.get('/dashboard/stats')
-        if (response.data) {
-          this.stats = response.data
+        if (response.data && response.data.success) {
+          this.stats = response.data.data
         }
       } catch (error) {
         console.error('Failed to fetch stats', error)

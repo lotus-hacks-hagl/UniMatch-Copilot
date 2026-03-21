@@ -21,7 +21,8 @@
     "gpaNorm": "GPA (Chuẩn hoá)",
     "ielts": "IELTS",
     "budget": "Ngân sách",
-    "noBudget": "Không có",
+    "noBudget": "Không có ngân sách",
+    "intake": "Kỳ nhập học",
     "countries": "Quốc gia",
     "any": "Bất kỳ",
     "strengths": "Điểm mạnh",
@@ -29,9 +30,10 @@
     "generateReport": "Tạo Báo Cáo PDF",
     "tabs": {
       "profile": "Hồ sơ",
-      "aiAnalysis": "AI Phân tích",
+      "aiAnalysis": "Phân tích AI",
       "documents": "Tài liệu",
-      "communication": "Trao đổi"
+      "communication": "Trao đổi",
+      "reportEditor": "Chỉnh sửa Report"
     },
     "fullBackground": "Chi Tiết Bối Cảnh Sinh Viên",
     "extracurriculars": "Hoạt động ngoại khoá",
@@ -139,7 +141,14 @@
     }
   },
   "students": {
-    "placeholder": "Nội dung phần Sinh viên đang được xây dựng."
+    "title": "Tất cả sinh viên",
+    "subtitle": "Quản lý hồ sơ học thuật và kỳ nhập học mục tiêu.",
+    "noData": "Không có dữ liệu sinh viên.",
+    "name": "Họ và tên",
+    "targetIntake": "Kỳ nhập học",
+    "gpa": "GPA",
+    "testScores": "Chứng chỉ",
+    "budget": "Ngân sách"
   },
   "auth": {
     "loginTitle": "Đăng nhập UniMatch",

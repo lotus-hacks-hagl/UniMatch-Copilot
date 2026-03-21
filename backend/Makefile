@@ -32,5 +32,9 @@ swagger:
 
 seed:
 	@echo "Seeding initial data..."
-	@echo "Note: Ensure DATABASE_URL is set."
-	@psql -d unimatch_be -f migrations/002_seed.sql
+	@go run scripts/seed.go
+
+init-data:
+	@echo "Initializing default data..."
+	@go run scripts/seed.go
+	@echo "Data initialization complete."

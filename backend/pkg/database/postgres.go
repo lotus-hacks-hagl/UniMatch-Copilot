@@ -1,6 +1,8 @@
 package database
 
 import (
+	"context"
+	"os"
 	"time"
 
 	"unimatch-be/internal/model"
@@ -44,6 +46,31 @@ func NewPostgres(dsn string) (*gorm.DB, error) {
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_universities_crawl_status ON universities(crawl_status)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC)")
 	db.Exec("CREATE INDEX IF NOT EXISTS idx_recommendations_case_id ON recommendations(case_id)")
+
+	// Auto-seed if universities table is empty
+	var count int64
+	db.Model(&model.University{}).Count(&count)
+	if count == 0 {
+		seedFile := "migrations/002_seed.sql"
+		content, err := os.ReadFile(seedFile)
+		if err == nil {
+			if err := db.Exec(string(content)).Error; err != nil {
+				logger.Default.Error(context.Background(), "failed to execute auto-seed: %v", err)
+			} else {
+				logger.Default.Info(context.Background(), "auto-seeded university data from %s", seedFile)
+			}
+		} else {
+			// Try parent directory if running from a specific subfolder
+			content, err = os.ReadFile("../" + seedFile)
+			if err == nil {
+				if err := db.Exec(string(content)).Error; err != nil {
+					logger.Default.Error(context.Background(), "failed to execute auto-seed: %v", err)
+				} else {
+					logger.Default.Info(context.Background(), "auto-seeded university data from %s", "../"+seedFile)
+				}
+			}
+		}
+	}
 
 	return db, nil
 }

@@ -40,6 +40,7 @@ func main() {
 	uniRepo  := repository.NewUniversityRepository(db)
 	actRepo  := repository.NewActivityRepository(db)
 	dashRepo := repository.NewDashboardRepository(db)
+	studentRepo := repository.NewStudentRepository(db)
 
 	// 5. Services
 	authSvc := service.NewAuthService(userRepo, cfg)
@@ -47,6 +48,7 @@ func main() {
 	uniSvc  := service.NewUniversityService(db, uniRepo, actRepo, aiClient, cfg)
 	dashSvc := service.NewDashboardService(dashRepo, actRepo)
 	adminSvc := service.NewAdminService(userRepo)
+	studentSvc := service.NewStudentService(studentRepo)
 
 	// 6. Handlers
 	authH     := handler.NewAuthHandler(authSvc)
@@ -55,9 +57,10 @@ func main() {
 	dashH     := handler.NewDashboardHandler(dashSvc)
 	internalH := handler.NewInternalHandler(caseSvc, uniSvc)
 	adminH    := handler.NewAdminHandler(adminSvc)
+	studentH  := handler.NewStudentHandler(studentSvc)
 
 	// 7. Router
-	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH, adminH)
+	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH, adminH, studentH)
 
 	log.Printf("🚀 UniMatch-BE running on :%s (env: %s)", cfg.Port, cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

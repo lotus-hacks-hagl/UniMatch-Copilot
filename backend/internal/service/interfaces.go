@@ -35,3 +35,8 @@ type DashboardService interface {
 	GetAnalytics(ctx context.Context) (*dto.Analytics, *apperror.AppError)
 	GetActivityLog(ctx context.Context, limit int) ([]model.ActivityLog, *apperror.AppError)
 }
+
+type StudentService interface {
+	List(ctx context.Context, page, limit int) (*dto.ListStudentsResponse, *apperror.AppError)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Student, *apperror.AppError)
+}

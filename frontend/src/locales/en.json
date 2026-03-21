@@ -22,6 +22,7 @@
     "ielts": "IELTS",
     "budget": "Budget",
     "noBudget": "No budget",
+    "intake": "Intake",
     "countries": "Countries",
     "any": "Any",
     "strengths": "Strengths",
@@ -31,7 +32,8 @@
       "profile": "Profile",
       "aiAnalysis": "AI Analysis",
       "documents": "Documents",
-      "communication": "Communication"
+      "communication": "Communication",
+      "reportEditor": "Report Editor"
     },
     "fullBackground": "Full Student Background",
     "extracurriculars": "Extracurriculars",
@@ -139,7 +141,14 @@
     }
   },
   "students": {
-    "placeholder": "Placeholder for Students."
+    "title": "All Students",
+    "subtitle": "Management of student academic profiles and target intake.",
+    "noData": "No students found.",
+    "name": "Name",
+    "targetIntake": "Target Intake",
+    "gpa": "GPA",
+    "testScores": "Test Scores",
+    "budget": "Budget"
   },
   "auth": {
     "loginTitle": "Login to UniMatch",

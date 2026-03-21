@@ -61,6 +61,12 @@ const router = createRouter({
       name: 'analytics',
       component: () => import('../views/AnalyticsView.vue'),
       meta: { title: 'Analytics', requiresAuth: true, requiresVerification: true }
+    },
+    {
+      path: '/review-queue',
+      name: 'review-queue',
+      component: () => import('../views/ReviewQueueView.vue'),
+      meta: { title: 'Review Queue', requiresAuth: true, requiresVerification: true }
     }
   ]
 })

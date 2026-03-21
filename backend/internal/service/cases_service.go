@@ -46,14 +46,14 @@ func NewCaseService(
 func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*dto.CaseCreatedResponse, *apperror.AppError) {
 	student := &model.Student{
 		FullName:               req.FullName,
-		GpaNormalized:          req.GpaNormalized,
+		GpaNormalized:          *req.GpaNormalized,
 		GpaRaw:                 req.GpaRaw,
 		GpaScale:               req.GpaScale,
 		IeltsOverall:           req.IeltsOverall,
 		SatTotal:               req.SatTotal,
 		ToeflTotal:             req.ToeflTotal,
 		IntendedMajor:          req.IntendedMajor,
-		BudgetUsdPerYear:       req.BudgetUsdPerYear,
+		BudgetUsdPerYear:       *req.BudgetUsdPerYear,
 		PreferredCountries:     req.PreferredCountries,
 		TargetIntake:           req.TargetIntake,
 		ScholarshipRequired:    req.ScholarshipRequired,

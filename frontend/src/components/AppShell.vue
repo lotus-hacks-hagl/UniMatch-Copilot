@@ -37,7 +37,7 @@ const navItems = computed(() => {
       { name: 'Teacher Management', path: '/admin/teachers', iconColor: 'bg-primary' },
       { name: t('common.cases'), path: '/cases', iconColor: 'bg-gray-400' },
       { name: t('common.students'), path: '/students', iconColor: 'bg-gray-300' },
-      { name: t('common.reviews'), path: '/queues', iconColor: 'bg-red-500', badge: queueStore.pendingCount },
+      { name: t('common.reviews'), path: '/review-queue', iconColor: 'bg-red-500', badge: queueStore.pendingCount },
       { name: t('common.kb'), path: '/universities', iconColor: 'bg-safe' },
       { name: t('common.analytics'), path: '/analytics', iconColor: 'bg-reach' }
     ]
@@ -47,7 +47,7 @@ const navItems = computed(() => {
   return [
     { name: t('common.cases'), path: '/cases', iconColor: 'bg-primary' },
     { name: t('common.students'), path: '/students', iconColor: 'bg-gray-300' },
-    { name: t('common.reviews'), path: '/queues', iconColor: 'bg-red-500', badge: queueStore.pendingCount },
+    { name: t('common.reviews'), path: '/review-queue', iconColor: 'bg-red-500', badge: queueStore.pendingCount },
     { name: t('common.kb'), path: '/universities', iconColor: 'bg-safe' },
     { name: t('common.analytics'), path: '/analytics', iconColor: 'bg-reach' }
   ]
