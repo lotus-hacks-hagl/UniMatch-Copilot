@@ -1,20 +1,23 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '../services/api'
 
 const router = useRouter()
 const currentStep = ref(1)
+const isSubmitting = ref(false)
 
 const form = ref({
-  studentName: '',
+  full_name: '',
   email: '',
   phone: '',
-  gpa: '',
-  ielts: '',
-  major: '',
-  country: '',
-  budget: '',
-  target: ''
+  gpa_raw: '',
+  gpa_scale: '4.0',
+  ielts_overall: '',
+  intended_major: '',
+  preferred_countries: [],
+  budget_usd_per_year: '',
+  target_intake: ''
 })
 
 const nextStep = () => {
@@ -25,10 +28,40 @@ const prevStep = () => {
   if (currentStep.value > 1) currentStep.value--
 }
 
-const submitForm = () => {
-  // Mock submitting
-  alert('Case created! Redirecting to dashboard...')
-  router.push('/cases')
+const submitForm = async () => {
+  isSubmitting.value = true
+  try {
+    // Basic normalization of strings to types
+    const payload = {
+      ...form.value,
+      gpa_raw: parseFloat(form.value.gpa_raw) || 0,
+      gpa_scale: parseFloat(form.value.gpa_scale) || 4.0,
+      ielts_overall: parseFloat(form.value.ielts_overall) || 0,
+      budget_usd_per_year: parseInt(form.value.budget_usd_per_year.replace(/\D/g,'')) || 0,
+    }
+    const response = await api.post('/cases', payload)
+    
+    // Redirect to new case details page
+    if (response.data && response.data.case_id) {
+      router.push('/cases/' + response.data.case_id)
+    } else {
+      router.push('/cases')
+    }
+  } catch (error) {
+    console.error('Failed to create case:', error)
+    alert('Failed to submit form.')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const toggleCountry = (code) => {
+  const idx = form.value.preferred_countries.indexOf(code)
+  if (idx > -1) {
+    form.value.preferred_countries.splice(idx, 1)
+  } else {
+    form.value.preferred_countries.push(code)
+  }
 }
 </script>
 
@@ -66,26 +99,23 @@ const submitForm = () => {
       <div v-if="currentStep === 1" class="space-y-4 animate-fade-in">
         <div>
           <label class="block text-[13px] font-medium text-text mb-1.5">Full Name</label>
-          <input v-model="form.studentName" type="text" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="e.g. Nguyen Van A" />
+          <input v-model="form.full_name" type="text" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="e.g. Nguyen Van A" />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">Email</label>
-            <input v-model="form.email" type="email" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="student@example.com" />
-          </div>
-          <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">Phone (Optional)</label>
-            <input v-model="form.phone" type="tel" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="+84..." />
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[13px] font-medium text-text mb-1.5">GPA (out of 4.0)</label>
-            <input v-model="form.gpa" type="number" step="0.1" max="4.0" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="3.8" />
+            <label class="block text-[13px] font-medium text-text mb-1.5">GPA Raw</label>
+            <div class="flex gap-2">
+              <input v-model="form.gpa_raw" type="number" step="0.1" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="3.8" />
+              <select v-model="form.gpa_scale" class="w-24 px-2 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text">
+                <option value="4.0">/ 4.0</option>
+                <option value="10.0">/ 10</option>
+                <option value="100.0">/ 100</option>
+              </select>
+            </div>
           </div>
           <div>
             <label class="block text-[13px] font-medium text-text mb-1.5">IELTS Score</label>
-            <input v-model="form.ielts" type="number" step="0.5" max="9.0" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="7.5" />
+            <input v-model="form.ielts_overall" type="number" step="0.5" max="9.0" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="7.5" />
           </div>
         </div>
       </div>
@@ -94,30 +124,34 @@ const submitForm = () => {
       <div v-if="currentStep === 2" class="space-y-4 animate-fade-in">
         <div>
           <label class="block text-[13px] font-medium text-text mb-1.5">Desired Major</label>
-          <select v-model="form.major" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow">
+          <select v-model="form.intended_major" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow">
             <option disabled value="">Select a major...</option>
-            <option>Computer Science</option>
-            <option>Business Administration</option>
-            <option>Data Science</option>
-            <option>Engineering</option>
-            <option>Arts & Design</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Business Administration">Business Administration</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Arts & Design">Arts & Design</option>
+            <option value="Law">Law</option>
+            <option value="Medicine">Medicine</option>
           </select>
         </div>
         <div>
-          <label class="block text-[13px] font-medium text-text mb-1.5">Target Country</label>
-          <select v-model="form.country" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow">
-            <option disabled value="">Select a country...</option>
-            <option>United States (USA)</option>
-            <option>United Kingdom (UK)</option>
-            <option>Canada</option>
-            <option>Australia</option>
-            <option>Singapore</option>
-          </select>
+          <label class="block text-[13px] font-medium text-text mb-1.5">Preferred Countries</label>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              v-for="c in ['USA', 'UK', 'Canada', 'Australia', 'Netherlands', 'Singapore']" 
+              :key="c"
+              @click="toggleCountry(c)"
+              class="px-3 py-1.5 rounded-lg border text-[13px] transition-colors"
+              :class="form.preferred_countries.includes(c) ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-black/10 text-text hover:bg-bg'"
+            >
+              {{ c }}
+            </button>
+          </div>
         </div>
         <div>
-          <label class="block text-[13px] font-medium text-text mb-1.5">Annual Budget</label>
+          <label class="block text-[13px] font-medium text-text mb-1.5">Annual Budget (USD)</label>
           <div class="relative">
-            <input v-model="form.budget" type="text" class="w-full pl-8 pr-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="e.g. 40,000" />
+            <input v-model="form.budget_usd_per_year" type="text" class="w-full pl-8 pr-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow" placeholder="e.g. 40,000" />
             <span class="absolute left-3.5 top-2.5 text-text-muted text-[13px]">$</span>
           </div>
         </div>
@@ -127,11 +161,11 @@ const submitForm = () => {
       <div v-if="currentStep === 3" class="space-y-4 animate-fade-in">
         <div>
           <label class="block text-[13px] font-medium text-text mb-1.5">Target Intake Term</label>
-          <select v-model="form.target" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow">
+          <select v-model="form.target_intake" class="w-full px-3.5 py-2.5 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg text-text transition-shadow">
             <option disabled value="">Select intake...</option>
-            <option>Fall 2026</option>
-            <option>Spring 2027</option>
-            <option>Fall 2027</option>
+            <option value="Fall 2026">Fall 2026</option>
+            <option value="Spring 2027">Spring 2027</option>
+            <option value="Fall 2027">Fall 2027</option>
           </select>
         </div>
         <div class="p-4 bg-secondary rounded-lg border border-primary/20">
@@ -169,9 +203,10 @@ const submitForm = () => {
         <button 
           v-if="currentStep === 3" 
           @click="submitForm"
-          class="px-5 py-2.5 rounded-lg text-[13px] font-medium bg-primary text-white hover:bg-primary-hover transition-colors shadow-sm"
+          :disabled="isSubmitting"
+          class="px-5 py-2.5 rounded-lg text-[13px] font-medium bg-primary text-white hover:bg-primary-hover transition-colors shadow-sm disabled:opacity-50"
         >
-          Submit & Analyze
+          {{ isSubmitting ? 'Creating Case...' : 'Submit & Analyze' }}
         </button>
       </div>
 

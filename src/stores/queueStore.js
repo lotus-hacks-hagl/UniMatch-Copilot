@@ -1,15 +1,30 @@
 import { defineStore } from 'pinia'
+import { api } from '../services/api'
 
 export const useQueueStore = defineStore('queue', {
   state: () => ({
-    pendingCount: 3,
-    syncCount: 3
+    pendingCount: 0,
+    syncCount: 0
   }),
   actions: {
-    // In a real app this would fetch from /api/v1/cases/count?status=human_review
     async fetchPendingCount() {
-      // Mocked
-      this.pendingCount = 3
+      try {
+        const response = await api.get('/cases/count?status=human_review')
+        // Assume API returns { count: N }
+        this.pendingCount = response.data.count || 0
+      } catch (error) {
+        console.error('Failed to fetch queue count', error)
+      }
+    },
+    async fetchSyncCount() {
+      try {
+        const response = await api.get('/universities/crawl-active')
+        // Assume API returns { count: N }
+        this.syncCount = response.data.count || 0
+      } catch (error) {
+        console.error('Failed to fetch sync count', error)
+        this.syncCount = 0
+      }
     }
   }
 })

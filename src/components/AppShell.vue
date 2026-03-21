@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueueStore } from '../stores/queueStore'
 
@@ -7,8 +7,19 @@ const route = useRoute()
 const router = useRouter()
 const queueStore = useQueueStore()
 
+let syncInterval = null
+
 onMounted(() => {
   queueStore.fetchPendingCount()
+  queueStore.fetchSyncCount()
+  syncInterval = setInterval(() => {
+    queueStore.fetchSyncCount()
+    queueStore.fetchPendingCount()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  if (syncInterval) clearInterval(syncInterval)
 })
 
 const navItems = [

@@ -1,12 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { api } from '../services/api'
+import { useToast } from '../composables/useToast'
 
-const kbs = ref([
-  { id: '1', name: 'Massachusetts Institute of Technology (MIT)', location: 'Cambridge, MA', rank: 1, acceptance: '4.8%', tuition: '$57,590' },
-  { id: '2', name: 'Stanford University', location: 'Stanford, CA', rank: 2, acceptance: '3.9%', tuition: '$56,169' },
-  { id: '3', name: 'Harvard University', location: 'Cambridge, MA', rank: 3, acceptance: '4.0%', tuition: '$54,269' },
-  { id: '4', name: 'University of Cambridge', location: 'Cambridge, UK', rank: 4, acceptance: '21.0%', tuition: '£33,825' },
-])
+const kbs = ref([])
+const totalKbs = ref(0)
+const loading = ref(true)
+const toast = useToast()
 
 const showModal = ref(false)
 const formData = ref({
@@ -17,13 +17,54 @@ const formData = ref({
   tuition: ''
 })
 
-const addUniversity = () => {
-  kbs.value.push({
-    id: Date.now().toString(),
-    ...formData.value
-  })
-  showModal.value = false
-  formData.value = { name: '', location: '', rank: '', acceptance: '', tuition: '' }
+const fetchUniversities = async () => {
+  try {
+    const res = await api.get('/universities', { params: { page: 1, limit: 100 } })
+    // map the API schema: Name, Country, QsRank, AcceptanceRate, TuitionUsdPerYear
+    const uniList = (res.data.universities || []).map(u => ({
+      id: u.id,
+      name: u.name,
+      location: u.country || 'N/A',
+      rank: u.qs_rank || '-',
+      acceptance: u.acceptance_rate ? (u.acceptance_rate * 100).toFixed(1) + '%' : 'N/A',
+      tuition: u.tuition_usd_per_year ? `$${u.tuition_usd_per_year}` : 'N/A'
+    }))
+    kbs.value = uniList
+    totalKbs.value = res.data.total || uniList.length
+  } catch (error) {
+    console.error('Failed to fetch universities', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchUniversities)
+
+const addUniversity = async () => {
+  try {
+    await api.post('/universities', {
+      name: formData.value.name,
+      country: formData.value.location,
+      qs_rank: parseInt(formData.value.rank) || null,
+      acceptance_rate: formData.value.acceptance ? parseFloat(formData.value.acceptance)/100 : null,
+      tuition_usd_per_year: parseInt(formData.value.tuition.replace(/\D/g,'')) || null
+    })
+    toast.addToast('University added successfully', 'success')
+    showModal.value = false
+    formData.value = { name: '', location: '', rank: '', acceptance: '', tuition: '' }
+    await fetchUniversities()
+  } catch(err) {
+    toast.addToast('Failed to add university', 'error')
+  }
+}
+
+const runSync = async () => {
+  try {
+    await api.post('/universities/crawl-all')
+    toast.addToast('TinyFish crawl started in background', 'success')
+  } catch (error) {
+    toast.addToast('Failed to trigger Sync', 'error')
+  }
 }
 </script>
 
@@ -32,15 +73,15 @@ const addUniversity = () => {
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-xl font-bold text-text">University Knowledge Base</h2>
-        <p class="text-[13px] text-text-muted mt-1">Explore and filter {{ kbs.length }} synced global universities.</p>
+        <p class="text-[13px] text-text-muted mt-1">Explore and filter {{ totalKbs }} synced global universities.</p>
       </div>
       <div class="flex items-center gap-3">
         <div class="relative">
           <input type="text" placeholder="Search univesities..." class="pl-8 pr-3 py-2 text-[13px] bg-surface border border-black/10 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg w-[260px]" />
           <svg class="w-4 h-4 text-text-muted absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
-        <button class="px-4 py-2 bg-surface text-text border border-black/10 rounded-lg text-[13px] font-medium hover:bg-bg shadow-sm transition-colors">
-          A-Z Sort
+        <button @click="runSync" class="px-4 py-2 bg-surface text-text border border-black/10 rounded-lg text-[13px] font-medium hover:bg-bg shadow-sm transition-colors flex items-center gap-2">
+          Sync KB
         </button>
         <button @click="showModal = true" class="px-4 py-2 bg-primary text-white border border-primary rounded-lg text-[13px] font-medium hover:bg-primary-hover shadow-sm transition-colors">
           + Add University
@@ -49,7 +90,8 @@ const addUniversity = () => {
     </div>
 
     <div class="bg-surface rounded-xl border border-black/5 shadow-sm overflow-hidden">
-      <table class="w-full text-left">
+      <div v-if="loading" class="p-10 text-center text-text-muted text-[13px]">Loading DB...</div>
+      <table v-else class="w-full text-left">
         <thead>
           <tr class="text-[11px] text-text-muted uppercase tracking-wider border-b border-black/5 bg-bg/50">
             <th class="px-5 py-3 font-medium">Global Rank</th>
@@ -62,7 +104,8 @@ const addUniversity = () => {
         <tbody class="divide-y divide-black/5 text-[13px]">
           <tr v-for="kb in kbs" :key="kb.id" class="hover:bg-bg/50 transition-colors cursor-pointer group">
             <td class="px-5 py-4 min-w-[100px]">
-              <div class="w-8 h-8 rounded-full bg-secondary text-primary font-bold flex items-center justify-center">#{{ kb.rank }}</div>
+              <div v-if="kb.rank !== '-'" class="w-8 h-8 rounded-full bg-secondary text-primary font-bold flex items-center justify-center">#{{ kb.rank }}</div>
+              <div v-else class="w-8 h-8 rounded-full bg-gray-100 text-text-muted font-bold flex items-center justify-center">-</div>
             </td>
             <td class="px-5 py-4 font-medium text-text group-hover:text-primary transition-colors">{{ kb.name }}</td>
             <td class="px-5 py-4 text-text-muted">{{ kb.location }}</td>

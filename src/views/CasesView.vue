@@ -1,53 +1,74 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useCasesStore } from '../stores/casesStore'
 
-const metrics = [
-  { label: 'Active cases', value: '47', sub: '+3 today', trend: 'up' },
-  { label: 'Avg processing', value: '2.4h', sub: '-12% vs last week', trend: 'down' },
-  { label: 'Awaiting review', value: '3', sub: 'High priority', trend: 'neutral', isAlert: true },
-  { label: 'AI Confidence', value: '92%', sub: '+4% accuracy', trend: 'up' }
-]
+const router = useRouter()
+const casesStore = useCasesStore()
+const { cases, stats, filter: activeFilter } = storeToRefs(casesStore)
 
 const filters = ['All cases', 'Done', 'Processing', 'Human review']
-const activeFilter = ref('All cases')
 
-const cases = [
-  {
-    id: 'C-2049',
-    student: { name: 'Nguyen Van A', avatar: 'NA', gpa: '3.8', ielts: '7.5' },
-    profile: { major: 'Computer Science', country: 'USA', budget: '$40k/yr' },
-    target: 'Fall 2026',
-    tiers: { safe: 2, match: 4, reach: 1 },
-    confidence: 94,
-    status: 'Done',
-    updated: '10m ago'
-  },
-  {
-    id: 'C-2050',
-    student: { name: 'Tran Thi B', avatar: 'TB', gpa: '3.2', ielts: '6.5' },
-    profile: { major: 'Business', country: 'UK', budget: '$30k/yr' },
-    target: 'Fall 2026',
-    tiers: { safe: 3, match: 2, reach: 2 },
-    confidence: 88,
-    status: 'Processing',
-    updated: '1h ago'
-  },
-  {
-    id: 'C-2051',
-    student: { name: 'Le Van C', avatar: 'LC', gpa: '3.9', ielts: '8.0' },
-    profile: { major: 'Data Science', country: 'Canada', budget: '$45k/yr' },
-    target: 'Spring 2027',
-    tiers: { safe: 1, match: 5, reach: 3 },
-    confidence: 72,
-    status: 'Human review',
-    updated: '2h ago'
-  }
-]
+onMounted(() => {
+  casesStore.fetchStats()
+  casesStore.fetchCases('All cases')
+})
 
-const getStatusClass = (status) => {
-  if (status === 'Done') return 'bg-safe/10 text-safe border-safe/20'
-  if (status === 'Processing') return 'bg-match/10 text-match border-match/20'
+const changeFilter = (f) => {
+  casesStore.fetchCases(f)
+}
+
+const getStatusClass = (statusStr) => {
+  const status = (statusStr || '').toLowerCase()
+  if (status === 'done') return 'bg-safe/10 text-safe border-safe/20'
+  if (status === 'processing') return 'bg-match/10 text-match border-match/20'
   return 'bg-reach/10 text-reach border-reach/20'
+}
+
+const getStatusLabel = (statusStr) => {
+  const status = (statusStr || '').toLowerCase()
+  if (status === 'human_review') return 'Human review'
+  if (status === 'done') return 'Done'
+  if (status === 'processing') return 'Processing'
+  return statusStr || 'Pending'
+}
+
+const getAvatar = (name) => {
+  if (!name) return '??'
+  const parts = name.split(' ')
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+  return name.substring(0, 2).toUpperCase()
+}
+
+const formatBudget = (val) => {
+  if (!val) return 'No budget'
+  return `$${Math.round(val/1000)}k/yr`
+}
+
+const getTiers = (recommendations) => {
+  if (!recommendations) return {}
+  const res = { safe: 0, match: 0, reach: 0 }
+  recommendations.forEach(r => {
+    if (r.tier === 'safe') res.safe++
+    if (r.tier === 'match') res.match++
+    if (r.tier === 'reach') res.reach++
+  })
+  return res
+}
+
+const formatConfidence = (val) => {
+  return Math.round((val || 0) * 100)
+}
+
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return 'Unknown'
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
 }
 </script>
 
@@ -56,20 +77,28 @@ const getStatusClass = (status) => {
     
     <!-- Metrics Row -->
     <div class="grid grid-cols-4 gap-4">
-      <div 
-        v-for="m in metrics" 
-        :key="m.label"
-        class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group"
-      >
+      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
+        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
+        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">Cases today</div>
+        <div class="text-2xl font-bold text-text mb-1">{{ stats.casesToday || 0 }}</div>
+      </div>
+      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
+        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
+        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">Avg processing</div>
+        <div class="text-2xl font-bold text-text mb-1">{{ stats.avgProcessingTime || '0m' }}</div>
+      </div>
+      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
         <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
         <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">
-          {{ m.label }}
-          <span v-if="m.isAlert" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          Awaiting review
+          <span v-if="stats.awaitingReview > 0" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
         </div>
-        <div class="text-2xl font-bold text-text mb-1">{{ m.value }}</div>
-        <div class="text-[11px]" :class="m.trend === 'down' ? 'text-safe' : (m.trend === 'up' ? 'text-text-muted' : 'text-reach')">
-          {{ m.sub }}
-        </div>
+        <div class="text-2xl font-bold text-text mb-1">{{ stats.awaitingReview || 0 }}</div>
+      </div>
+      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
+        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
+        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">AI Confidence</div>
+        <div class="text-2xl font-bold text-text mb-1">{{ formatConfidence(stats.aiConfidenceAvg) }}%</div>
       </div>
     </div>
 
@@ -81,7 +110,7 @@ const getStatusClass = (status) => {
           <button 
             v-for="f in filters" 
             :key="f"
-            @click="activeFilter = f"
+            @click="changeFilter(f)"
             class="py-3.5 text-[13px] font-medium border-b-2 transition-colors"
             :class="activeFilter === f ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
           >
@@ -101,7 +130,8 @@ const getStatusClass = (status) => {
 
       <!-- Table -->
       <div class="overflow-x-auto min-h-[300px]">
-        <table class="w-full text-left border-collapse">
+        <div v-if="casesStore.loading" class="flex items-center justify-center h-[300px] text-text-muted">Loading cases...</div>
+        <table v-else-if="cases.length > 0" class="w-full text-left border-collapse">
           <thead>
             <tr class="text-[11px] text-text-muted uppercase tracking-wider border-b border-black/5">
               <th class="px-5 py-3 font-medium">Student</th>
@@ -116,71 +146,69 @@ const getStatusClass = (status) => {
             <tr 
               v-for="c in cases" 
               :key="c.id"
-              v-show="activeFilter === 'All cases' || activeFilter === c.status"
+              @click="router.push('/cases/' + c.id)"
               class="hover:bg-bg/50 transition-colors group cursor-pointer"
             >
               <td class="px-5 py-3">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full bg-secondary text-primary font-medium flex items-center justify-center shrink-0 border border-primary/10">
-                    {{ c.student.avatar }}
+                    {{ getAvatar(c.student?.full_name) }}
                   </div>
                   <div>
-                    <div class="font-medium text-text group-hover:text-primary transition-colors">{{ c.student.name }}</div>
-                    <div class="text-[11px] text-text-muted mt-0.5">GPA {{ c.student.gpa }} • IELTS {{ c.student.ielts }}</div>
+                    <div class="font-medium text-text group-hover:text-primary transition-colors">{{ c.student?.full_name }}</div>
+                    <div class="text-[11px] text-text-muted mt-0.5" v-if="c.student">GPA {{ c.student.gpa_normalized }} • IELTS {{ c.student.ielts_overall }}</div>
                   </div>
                 </div>
               </td>
               <td class="px-5 py-3">
-                <div class="text-text">{{ c.profile.major }}</div>
-                <div class="text-[11px] text-text-muted mt-0.5">{{ c.profile.country }} • {{ c.profile.budget }}</div>
+                <div class="text-text">{{ c.student?.intended_major }}</div>
+                <div class="text-[11px] text-text-muted mt-0.5">{{ (c.student?.preferred_countries || []).join(', ') }} • {{ formatBudget(c.student?.budget_usd_per_year) }}</div>
               </td>
               <td class="px-5 py-3">
-                <div class="text-text">{{ c.target }}</div>
+                <div class="text-text">{{ c.student?.target_intake }}</div>
                 <div class="text-[11px] text-text-muted mt-0.5">Bachelor</div>
               </td>
               <td class="px-5 py-3">
-                <div class="flex gap-1.5">
-                  <span v-if="c.tiers.safe" class="px-2 py-0.5 rounded text-[10px] font-medium bg-safe/10 text-safe border border-safe/20">{{ c.tiers.safe }} Safe</span>
-                  <span v-if="c.tiers.match" class="px-2 py-0.5 rounded text-[10px] font-medium bg-match/10 text-match border border-match/20">{{ c.tiers.match }} Match</span>
-                  <span v-if="c.tiers.reach" class="px-2 py-0.5 rounded text-[10px] font-medium bg-reach/10 text-reach border border-reach/20">{{ c.tiers.reach }} Reach</span>
+                <div class="flex gap-1.5" v-if="c.recommendations">
+                  <span v-if="getTiers(c.recommendations).safe > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-safe/10 text-safe border border-safe/20">{{ getTiers(c.recommendations).safe }} Safe</span>
+                  <span v-if="getTiers(c.recommendations).match > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-match/10 text-match border border-match/20">{{ getTiers(c.recommendations).match }} Match</span>
+                  <span v-if="getTiers(c.recommendations).reach > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-reach/10 text-reach border border-reach/20">{{ getTiers(c.recommendations).reach }} Reach</span>
                 </div>
+                <div v-else class="text-text-muted text-[11px]">Pending AI</div>
               </td>
               <td class="px-5 py-3">
                 <div class="flex items-center gap-2">
                   <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div 
                       class="h-full rounded-full" 
-                      :class="c.confidence >= 90 ? 'bg-safe' : (c.confidence >= 80 ? 'bg-match' : 'bg-reach')"
-                      :style="{ width: c.confidence + '%' }"
+                      :class="formatConfidence(c.ai_confidence) >= 90 ? 'bg-safe' : (formatConfidence(c.ai_confidence) >= 80 ? 'bg-match' : 'bg-reach')"
+                      :style="{ width: Math.max(5, formatConfidence(c.ai_confidence)) + '%' }"
                     ></div>
                   </div>
-                  <span class="text-[11px] font-medium" :class="c.confidence >= 90 ? 'text-safe' : (c.confidence >= 80 ? 'text-match' : 'text-reach')">{{ c.confidence }}%</span>
+                  <span class="text-[11px] font-medium" :class="formatConfidence(c.ai_confidence) >= 90 ? 'text-safe' : (formatConfidence(c.ai_confidence) >= 80 ? 'text-match' : 'text-reach')">{{ formatConfidence(c.ai_confidence) }}%</span>
                 </div>
               </td>
               <td class="px-5 py-3">
                 <div class="flex items-center justify-between">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border" :class="getStatusClass(c.status)">
-                    {{ c.status }}
+                    {{ getStatusLabel(c.status) }}
                   </span>
-                  <span class="text-[10px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">{{ c.updated }}</span>
+                  <span class="text-[10px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ml-2">{{ formatRelativeTime(c.updated_at) }}</span>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-      <div class="px-5 py-3 border-t border-black/5 bg-gray-50/50 flex items-center justify-between text-[11px] text-text-muted">
-        <div>Showing 3 of 47 cases</div>
-        <div class="flex items-center gap-1">
-          <button class="p-1 rounded hover:bg-gray-200">Prev</button>
-          <span class="px-2">1 / 16</span>
-          <button class="p-1 rounded hover:bg-gray-200">Next</button>
+        <div v-else class="flex flex-col items-center justify-center p-12 h-[300px] bg-surfacce rounded-lg border-2 border-dashed border-black/10 mx-5 my-5">
+          <svg class="w-10 h-10 text-black/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <p class="text-[13px] text-text-muted">No cases found matching the criteria.</p>
         </div>
       </div>
     </div>
 
     <!-- Analytics Row -->
     <div class="grid grid-cols-3 gap-4">
+      <!-- Empty charts placeholder to preserve UI layout -->
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
         <div class="text-[13px] text-text-muted mb-4 font-medium">Cases per day</div>
         <div class="h-24 flex items-end gap-2 justify-between">
@@ -198,7 +226,7 @@ const getStatusClass = (status) => {
         <div class="h-24 flex items-center justify-center relative">
           <!-- Fake Donut -->
           <div class="w-20 h-20 rounded-full border-4 border-t-safe border-r-match border-b-reach border-l-gray-100 flex items-center justify-center">
-             <span class="text-lg font-bold text-text">142</span>
+             <span class="text-lg font-bold text-text">...</span>
           </div>
         </div>
       </div>
