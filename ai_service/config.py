@@ -22,7 +22,8 @@ class Config:
     NEO4J_PASSWORD = _env_stripped("NEO4J_PASSWORD", "password")
     NEO4J_MCP_URL = _env_stripped("NEO4J_MCP_URL", "http://127.0.0.1:8081/api/mcp/")
     EXA_API_KEY = _env_stripped("EXA_API_KEY", "")
-
+    AGENTQL_API_KEY = _env_stripped("AGENTQL_API_KEY", "")
+    
 config = Config()
 
 

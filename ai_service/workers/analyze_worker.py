@@ -87,6 +87,7 @@ async def process_analyze_job(job: dict):
     )
 
     uvx_cmd = "uvx.exe" if sys.platform == "win32" else "uvx"
+    npx_cmd = "npx.cmd" if sys.platform == "win32" else "npx"
 
     neo4j_env = {}
     neo4j_env["NEO4J_URI"] = config.NEO4J_URI
@@ -95,6 +96,7 @@ async def process_analyze_job(job: dict):
 
     options = ClaudeAgentOptions(
         system_prompt=SYSTEM,
+        permission_mode="bypassPermissions",
         env=build_claude_cli_env(),
         mcp_servers={
             "neo4j": {
@@ -107,25 +109,18 @@ async def process_analyze_job(job: dict):
                 "type": "http",
                 "url": f"https://mcp.exa.ai/mcp?exaApiKey={config.EXA_API_KEY}",
             },
+            "agentql": {
+                "type": "stdio",
+                "command": npx_cmd,
+                "args": ["-y", "agentql-mcp"],
+                "env": {
+                    "AGENTQL_API_KEY": config.AGENTQL_API_KEY,
+                },
+            },
         },
         setting_sources=["local", "project", "user"],
-        allowed_tools=[
-            "Skill",
-            "ToolSearch",
-            "Bash",
-            "TodoWrite",
-            "Agent",
-            "Read",
-            "Write",
-            "mcp__neo4j__*",
-            "mcp__exa__*",
-        ],
-        effort="high",
-        plugins=[
-            {
-                "type": "local",
-                "path": "./.claude/plugins/ralph-loop",
-            }
+        disallowed_tools=[
+            "WebSearch",
         ],
         output_format={
             "type": "json_object",

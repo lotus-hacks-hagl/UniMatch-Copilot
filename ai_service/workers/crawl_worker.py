@@ -56,6 +56,7 @@ and write them to Neo4j using write_neo4j_cypher.
 """
 
     uvx_cmd = "uvx.exe" if sys.platform == "win32" else "uvx"
+    npx_cmd = "npx.cmd" if sys.platform == "win32" else "npx"
 
     neo4j_env = {}
     neo4j_env["NEO4J_URI"] = config.NEO4J_URI
@@ -64,6 +65,7 @@ and write them to Neo4j using write_neo4j_cypher.
 
     options = ClaudeAgentOptions(
         system_prompt=system_prompt,
+        permission_mode="bypassPermissions",
         env=build_claude_cli_env(),
         mcp_servers={
             "neo4j": {
@@ -76,26 +78,19 @@ and write them to Neo4j using write_neo4j_cypher.
                 "type": "http",
                 "url": f"https://mcp.exa.ai/mcp?exaApiKey={config.EXA_API_KEY}",
             },
+            "agentql": {
+                "type": "stdio",
+                "command": npx_cmd,
+                "args": ["-y", "agentql-mcp"],
+                "env": {
+                    "AGENTQL_API_KEY": config.AGENTQL_API_KEY,
+                }
+            },
         },
         setting_sources=["local", "project", "user"],
-        allowed_tools=[
-            "Skill",
-            "ToolSearch",
-            "Bash",
-            "TodoWrite",
-            "Agent",
-            "Read", "Write",
-            "mcp__neo4j__*",
-            "mcp__exa__*",
+        disallowed_tools=[
+            "WebSearch",
         ],
-        effort="high",
-        plugins=[
-            {
-                "type": "local",
-                "path": "./.claude/plugins/ralph-loop",
-            }
-        ],
-        max_turns=25,
         output_format={
             "type": "json_schema",
             "schema": CrawlResult.model_json_schema(),

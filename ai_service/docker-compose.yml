@@ -28,8 +28,8 @@ services:
     env_file:
       - .env
     environment:
-      - REMAP_CLAUDE_HAIKU_TO=gpt-5.3-codex-reason-medium
-      - REMAP_CLAUDE_SONNET_TO=gpt-5.4-reason-medium
+      - REMAP_CLAUDE_HAIKU_TO=gpt-5.4-reason-high
+      - REMAP_CLAUDE_SONNET_TO=gpt-5.4-reason-high
       - REMAP_CLAUDE_OPUS_TO=gpt-5.4-reason-high
       - ALWAYS_USE_RESPONSES_API=true
     ports:

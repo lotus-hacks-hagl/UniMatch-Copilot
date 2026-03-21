@@ -9,3 +9,4 @@ claude-agent-sdk
 anyio
 anthropic
 pydantic
+requests
