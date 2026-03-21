@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: unimatch_db
     environment:
       POSTGRES_USER: postgres
@@ -16,6 +16,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: unimatch-backend-local:latest
     container_name: unimatch_backend
     ports:
       - "8080:8080"

@@ -1,10 +1,10 @@
 # Build stage
-FROM golang:1.26-alpine AS builder
+FROM golang:1.26 AS builder
 
 WORKDIR /app
 
 # Install git and other build dependencies
-RUN apk add --no-cache git
+RUN apt-get update && apt-get install -y git
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
@@ -19,12 +19,12 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/server main.go
 
 # Final stage
-FROM alpine:latest
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
 # Install ca-certificates and tzdata for SSL/TLS and timezone support
-RUN apk --no-cache add ca-certificates tzdata
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata && rm -rf /var/lib/apt/lists/*
 
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/bin/server .
