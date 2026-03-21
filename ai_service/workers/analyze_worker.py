@@ -95,7 +95,11 @@ async def process_analyze_job(job: dict):
     neo4j_env["NEO4J_PASSWORD"] = config.NEO4J_PASSWORD
 
     options = ClaudeAgentOptions(
-        system_prompt=SYSTEM,
+        system_prompt={
+            "type": "preset",
+            "preset": "claude_code",
+            "append": SYSTEM,
+        },
         permission_mode="bypassPermissions",
         env=build_claude_cli_env(),
         mcp_servers={
