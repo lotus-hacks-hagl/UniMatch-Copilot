@@ -54,7 +54,7 @@ const router = createRouter({
       path: '/universities',
       name: 'universities',
       component: () => import('../views/UniversityKBView.vue'),
-      meta: { title: 'University KB', requiresAuth: true, requiresVerification: true }
+      meta: { title: 'University', requiresAuth: true, requiresVerification: true }
     },
     {
       path: '/analytics',
@@ -77,7 +77,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
-  
+
   // 1. Auth check
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return next('/auth')
