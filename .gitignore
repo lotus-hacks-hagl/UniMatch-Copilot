@@ -217,3 +217,7 @@ build/
 .agents/
 playwright-report/
 test-results
+seed.exe
+unimatch-be.exe~
+.DS_Store
+bin/
