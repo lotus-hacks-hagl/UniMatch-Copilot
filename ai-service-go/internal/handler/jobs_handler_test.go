@@ -49,7 +49,7 @@ func TestJobsRouterExposesDebugEndpointInTestEnv(t *testing.T) {
 	defer callbackSrv.Close()
 
 	cfg := &config.Config{
-		Port:                "9000",
+		Port:                "8895",
 		Env:                 "test",
 		ExaAPIKey:           "exa-test",
 		TinyfishAPIKey:      "tinyfish-test",

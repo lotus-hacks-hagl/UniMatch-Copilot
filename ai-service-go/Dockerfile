@@ -8,5 +8,5 @@ RUN go build -o ai-service-go .
 FROM alpine:3.21
 WORKDIR /app
 COPY --from=builder /app/ai-service-go /app/ai-service-go
-EXPOSE 9000
+EXPOSE 8895
 CMD ["/app/ai-service-go"]

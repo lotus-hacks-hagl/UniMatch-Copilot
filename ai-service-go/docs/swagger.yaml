@@ -200,7 +200,7 @@ definitions:
       success:
         type: boolean
     type: object
-host: localhost:9000
+host: localhost:8895
 info:
   contact: {}
   description: Simple AI orchestration service for UniMatch using Exa and TinyFish

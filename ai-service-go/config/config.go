@@ -39,7 +39,7 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:                getEnv("PORT", "9000"),
+		Port:                getEnv("PORT", "8895"),
 		Env:                 getEnv("ENV", "development"),
 		ExaAPIKey:           os.Getenv("EXA_API_KEY"),
 		TinyfishAPIKey:      os.Getenv("TINYFISH_API_KEY"),

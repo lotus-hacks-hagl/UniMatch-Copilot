@@ -1,10 +1,15 @@
+BIN_NAME=backend-service
+CONTAINER_NAME=unimatch-backend
+
 .PHONY: all build run test clean db-up db-down swagger seed
 
 all: build
 
 build:
-	@echo "Building backend..."
-	@go build -o bin/server main.go
+	@echo "Building $(BIN_NAME)..."
+	@mkdir -p ../bin
+	@GOARCH=amd64 GOOS=linux go build -o ../bin/$(BIN_NAME) .
+	@echo "Build $(BIN_NAME) done."
 
 run:
 	@echo "Running backend server..."

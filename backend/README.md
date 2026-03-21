@@ -60,7 +60,7 @@ make swagger
 make run
 # Hoặc chạy lệnh thẳng: go run main.go
 ```
-*Server mặc định sẽ chạy ở cổng `8080` (Cấu hình qua biến `PORT` trong env).*
+*Server mặc định sẽ chạy ở cổng `8894` (Cấu hình qua biến `PORT` trong env).*
 
 ---
 
@@ -69,7 +69,7 @@ make run
 ### API Documentation (Swagger UI)
 Toàn bộ chi tiết về Input/Output của các Request đều có sẵn trực quan tại Swagger.
 Truy cập trang Docs sau khi bật server:
-👉 **[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)**
+👉 **[http://localhost:8894/swagger/index.html](http://localhost:8894/swagger/index.html)**
 
 ### Workflow Test Thử Backend (Local)
 1. Bật server thành công.

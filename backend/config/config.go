@@ -8,24 +8,24 @@ import (
 )
 
 type Config struct {
-	Port          string
-	DatabaseURL   string
-	AIServiceURL  string
-	PublicBaseURL string
+	Port            string
+	DatabaseURL     string
+	AIServiceURL    string
+	PublicBaseURL   string
 	InternalBaseURL string
-	Env           string
-	JWTSecret     string
+	Env             string
+	JWTSecret       string
 }
 
 func Load() *Config {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, reading from environment")
 	}
-	port := getEnv("PORT", "8080")
+	port := getEnv("PORT", "8894")
 	return &Config{
 		Port:            port,
 		DatabaseURL:     mustEnv("DATABASE_URL"),
-		AIServiceURL:    getEnv("AI_SERVICE_URL", "http://localhost:9000"),
+		AIServiceURL:    getEnv("AI_SERVICE_URL", "http://localhost:8895"),
 		PublicBaseURL:   getEnv("PUBLIC_BASE_URL", "http://localhost:"+port),
 		InternalBaseURL: getEnv("INTERNAL_BASE_URL", "http://localhost:"+port),
 		Env:             getEnv("ENV", "development"),

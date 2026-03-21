@@ -28,7 +28,7 @@ go mod tidy
 go run main.go
 ```
 
-The service listens on port `9000` by default, matching the backend's `AI_SERVICE_URL`.
+The service listens on port `8895` by default, matching the backend's `AI_SERVICE_URL`.
 
 ## Local Debug And Retry Controls
 

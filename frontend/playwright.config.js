@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const feBaseURL = process.env.E2E_FE_BASE_URL || 'http://127.0.0.1:5173';
-const apiBaseURL = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:8080/api/v1';
+const apiBaseURL = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:8894/api/v1';
 const url = new URL(feBaseURL);
 const isLocalFe = ['127.0.0.1', 'localhost'].includes(url.hostname);
 const fePort = Number(url.port || 5173);

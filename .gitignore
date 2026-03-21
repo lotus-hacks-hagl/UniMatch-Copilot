@@ -137,6 +137,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.production
+.env.dev
 .envrc
 .venv
 env/
@@ -215,3 +217,7 @@ build/
 .agents/
 playwright-report/
 test-results
+seed.exe
+unimatch-be.exe~
+.DS_Store
+bin/
