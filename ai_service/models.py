@@ -4,22 +4,104 @@ from typing import Optional
 class UniversityMetadata(BaseModel):
     name: str = Field(description="Tên trường đại học")
     country: str = Field(description="Quốc gia nơi trường đại học tọa lạc")
-    qs_rank: Optional[int] = Field(description="Thứ hạng QS của trường, nếu có thể tìm được")
-    ielts_min: Optional[float] = Field(description="Điểm IELTS tối thiểu, nếu có thể tìm được")
-    sat_required: Optional[bool] = Field(description="Trường có yêu cầu SAT hay không, nếu có thể tìm được")
-    gpa_expectation_normalized: Optional[float] = Field(description="Điểm GPA kỳ vọng đã được chuẩn hóa về thang điểm 4.0, nếu có thể tìm được")
-    tuition_usd_per_year: Optional[int] = Field(description="Học phí mỗi năm tính theo USD, nếu có thể tìm được")
-    scholarship_available: Optional[bool] = Field(description="Trường có cung cấp học bổng hay không, nếu có thể tìm được")
-    scholarship_notes: Optional[str] = Field(description="Ghi chú về học bổng nếu có, ví dụ: loại học bổng, giá trị, điều kiện nhận được, nếu có thể tìm được")
-    application_deadline: Optional[str] = Field(description="Hạn chót nộp hồ sơ (YYYY-MM-DD), nếu có thể tìm được")
-    available_majors: Optional[list[str]] = Field(description="Danh sách các ngành học có tại trường, nếu có thể tìm được")
-    acceptance_rate: Optional[float] = Field(description="Tỷ lệ chấp nhận của trường, nếu có thể tìm được")
+    qs_rank: Optional[int] = Field(
+        default=None,
+        description="Thứ hạng QS của trường, nếu có thể tìm được")
+    ielts_min: Optional[float] = Field(
+        default=None,
+        description="Điểm IELTS tối thiểu, nếu có thể tìm được"
+    )
+    sat_required: Optional[bool] = Field(
+        default=None,
+        description="Trường có yêu cầu SAT hay không, nếu có thể tìm được"
+    )
+    gpa_expectation_normalized: Optional[float] = Field(
+        default=None,
+        description="Điểm GPA kỳ vọng đã được chuẩn hóa về thang điểm 4.0, nếu có thể tìm được"
+    )
+    tuition_usd_per_year: Optional[int] = Field(
+        default=None,
+        description="Học phí mỗi năm tính theo USD, nếu có thể tìm được"
+    )
+    scholarship_available: Optional[bool] = Field(
+        default=None,
+        description="Trường có cung cấp học bổng hay không, nếu có thể tìm được"
+    )
+    scholarship_notes: Optional[str] = Field(
+        default=None,
+        description="Ghi chú về học bổng nếu có, ví dụ: loại học bổng, giá trị, điều kiện nhận được, nếu có thể tìm được"
+    )
+    application_deadline: Optional[str] = Field(
+        default=None,
+        description="Hạn chót nộp hồ sơ (YYYY-MM-DD), nếu có thể tìm được"
+    )
+    available_majors: Optional[list[str]] = Field(
+        default=None,
+        description="Danh sách các ngành học có tại trường, nếu có thể tìm được"
+    )
+    acceptance_rate: Optional[float] = Field(
+        default=None,
+        description="Tỷ lệ chấp nhận của trường, nếu có thể tìm được"
+    )
 
 class CrawlJobRequest(BaseModel):
     job_id: str
     university_id: str                           # BE's UUID
-    callback_url: str
+    callback_url: str = ""
     metadata: UniversityMetadata                 # full metadata, nulls = fields to detect
+
+
+class CrawlFixedFields(BaseModel):
+    qs_rank: Optional[int] = Field(
+        default=None,
+        description="Thứ hạng QS của trường, nếu có thể tìm được"
+    )
+    ielts_min: Optional[float] = Field(
+        default=None,
+        description="Điểm IELTS tối thiểu, nếu có thể tìm được"
+    )
+    sat_required: Optional[bool] = Field(
+        default=None,
+        description="Trường có yêu cầu SAT hay không, nếu có thể tìm được"
+    )
+    gpa_expectation_normalized: Optional[float] = Field(
+        default=None,
+        description="Điểm GPA kỳ vọng đã được chuẩn hóa về thang điểm 4.0, nếu có thể tìm được"
+    )
+    tuition_usd_per_year: Optional[int] = Field(
+        default=None,
+        description="Học phí mỗi năm tính theo USD, nếu có thể tìm được"
+    )
+    scholarship_available: Optional[bool] = Field(
+        default=None,
+        description="Trường có cung cấp học bổng hay không, nếu có thể tìm được"
+    )
+    scholarship_notes: Optional[str] = Field(
+        default=None,
+        description="Ghi chú về học bổng nếu có, ví dụ: loại học bổng, giá trị, điều kiện nhận được, nếu có thể tìm được"
+    )
+    application_deadline: Optional[str] = Field(
+        default=None,
+        description="Hạn chót nộp hồ sơ (YYYY-MM-DD), nếu có thể tìm được"
+    )
+    available_majors: Optional[list[str]] = Field(
+        default=None,
+        description="Danh sách các ngành học có tại trường, nếu có thể tìm được"
+    )
+    acceptance_rate: Optional[float] = Field(
+        default=None,
+        description="Tỷ lệ chấp nhận của trường, nếu có thể tìm được"
+    )
+
+
+class CrawlResult(BaseModel):
+    fixed_fields: CrawlFixedFields = Field(
+        description="The researched fields found by the agent; leave missing ones as null"
+    )
+    source_urls: list[str] = Field(
+        default_factory=list,
+        description="URLs actually used during research"
+    )
 
 class AnalyzeInput(BaseModel):
     full_name: str
@@ -105,4 +187,3 @@ class AnalyzeResult(BaseModel):
     escalation_reason: Optional[str] = Field(
         description="Lý do cần sự can thiệp của con người. Nếu bạn không thể tìm đủ thông tin để đưa ra quyết định, hãy để lại lý do ở đây"
     )
-

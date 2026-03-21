@@ -29,8 +29,13 @@ def make_worker_loop(job_type: str, process_fn):
                 await process_fn(job)
             except Exception as e:
                 logger.error(f"[{job_type}] job {job.get('job_id')} failed: {e}", exc_info=True)
+                from job_db import update_job
                 from workers.callback import callback_be
-                await callback_be(job["callback_url"], job["job_id"],
+                job_id = job.get("job_id")
+                if job_id:
+                    update_job(job_id, "failed", error=str(e))
+
+                await callback_be(job.get("callback_url"), job_id,
                                   job_type, "failed", error=str(e),
                                   university_id=job.get("university_id"),
                                   case_id=job.get("case_id"))

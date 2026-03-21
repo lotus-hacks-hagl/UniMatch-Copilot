@@ -39,7 +39,7 @@ app.add_middleware(
 @app.post("/jobs/crawl", tags=["Jobs"], summary="Submit a University Crawl Job")
 async def submit_crawl(body: CrawlJobRequest):
     """
-    Enqueue a background job to crawl and merge university data via TinyFish MCP and Neo4j MCP.
+    Enqueue a background job to crawl and merge university data via the TinyFish web agent skill and Neo4j MCP.
     """
     try:
         async with neo4j_driver.session() as s:

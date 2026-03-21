@@ -7,7 +7,8 @@ services:
     env_file:
       - .env
     environment:
-      - ANTHROPIC_BASE_URL=http://claude-code-proxy:8082
+      - ANTHROPIC_BASE_URL=http://claude-code-proxy:4000
+      - NEO4J_URI=bolt://neo4j:7687
     # We must allow the container to access host network to reach local MCP/DBs if they aren't in docker
     # network_mode: "host" can be useful depending on OS, but for Windows Docker Desktop, we use host.docker.internal
     # So the user must update .env: DB URLs pointing to localhost should point to host.docker.internal
@@ -16,12 +17,35 @@ services:
     restart: unless-stopped
     depends_on:
       - claude-code-proxy
+      - neo4j
 
   claude-code-proxy:
-    image: ghcr.io/1rgs/claude-code-proxy:main
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
     container_name: unimatch-claude-proxy
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      - REMAP_CLAUDE_HAIKU_TO=gpt-5.3-codex-reason-medium
+      - REMAP_CLAUDE_SONNET_TO=gpt-5.4-reason-medium
+      - REMAP_CLAUDE_OPUS_TO=gpt-5.4-reason-high
+      - ALWAYS_USE_RESPONSES_API=true
     ports:
-      - "8082:8082"
+      - "8082:4000"
+
+  neo4j:
+    image: neo4j:5
+    container_name: unimatch-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-password}
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  neo4j_data:

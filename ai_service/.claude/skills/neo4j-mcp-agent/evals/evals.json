@@ -1,0 +1,29 @@
+{
+  "skill_name": "neo4j-mcp-agent",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I inherited a Neo4j graph and I do not trust the docs. Use Neo4j MCP to inspect the schema, tell me which labels and relationship types matter most, and suggest one safe first read query so I can sanity-check the data without changing anything.",
+      "expected_output": "The response inspects schema first, summarizes important labels and relationships clearly, and proposes a bounded read-only Cypher query rather than jumping straight into writes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I need to add a university node, connect it to a Computer Science program, and attach an IELTS requirement, but I do not want duplicate nodes if the data already exists. Write the Cypher you would use through Neo4j MCP, explain why the key parts use MERGE, and show how you would verify the result afterward.",
+      "expected_output": "The response uses stable keys where possible, prefers MERGE for idempotent upserts, explains the write logic, and includes a verification read query after the write.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I suspect my graph has duplicate Scholarship nodes because different imports used slightly different capitalization. Please show me how you would detect duplicates safely first, explain the cleanup plan, and avoid destructive changes until I confirm.",
+      "expected_output": "The response starts with a duplicate-detection read query, quantifies impact, proposes a careful cleanup approach, and does not jump straight to destructive writes.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Mình có query Cypher này nhưng chạy ra 0 rows: `MATCH (u:University)-[:OFFERS]->(s:Scholarship) WHERE u.country = 'Netherlands' RETURN u.name, s.name`. Hãy dùng Neo4j MCP để kiểm tra schema, chỉ ra giả định nào có thể sai, rồi đề xuất cách debug từng bước. Nếu sửa được query thì giải thích luôn kết quả theo ngôn ngữ dễ hiểu.",
+      "expected_output": "The response checks schema first, diagnoses likely causes such as wrong relationship type or missing properties, proposes a step-by-step debugging sequence, and explains any corrected query/result in plain language.",
+      "files": []
+    }
+  ]
+}
