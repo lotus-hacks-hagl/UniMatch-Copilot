@@ -1,0 +1,11 @@
+fastapi[all]
+uvicorn
+httpx
+python-dotenv
+psycopg2-binary
+SQLAlchemy
+neo4j
+claude-agent-sdk
+anyio
+anthropic
+pydantic

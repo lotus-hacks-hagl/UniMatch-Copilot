@@ -1,0 +1,27 @@
+services:
+  ai-service:
+    build: .
+    container_name: unimatch-ai-service
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env
+    environment:
+      - ANTHROPIC_BASE_URL=http://claude-code-proxy:8082
+    # We must allow the container to access host network to reach local MCP/DBs if they aren't in docker
+    # network_mode: "host" can be useful depending on OS, but for Windows Docker Desktop, we use host.docker.internal
+    # So the user must update .env: DB URLs pointing to localhost should point to host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      - claude-code-proxy
+
+  claude-code-proxy:
+    image: ghcr.io/1rgs/claude-code-proxy:main
+    container_name: unimatch-claude-proxy
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8082:8082"

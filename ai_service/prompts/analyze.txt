@@ -1,0 +1,47 @@
+Match this student profile with the provided universities.
+
+STUDENT PROFILE:
+{student_json}
+
+UNIVERSITIES:
+{universities_json}
+
+INSTRUCTIONS:
+1. Examine the provided Universities from the internal database.
+2. IMPORTANT: You have access to the Knowledge Graph via Neo4j MCP. Use `get_neo4j_schema` or `read_neo4j_cypher` to query deeper relationships (like AdmissionReq, Program details, Scholarships) not fully present in the base JSON.
+3. IMPORTANT: Use your Web Agent (run_web_automation via TinyFish MCP) if necessary to search online and research deep admission events or program-specific requirements missing from the graph.
+4. Calculate admission_likelihood_score (0-100) and student_fit_score (0-100) for each university based on database logic, Neo4j Graph relations, and online research.
+5. Categorize each into tier: "safe", "match", or "reach".
+6. Identify strengths, weaknesses from the student profile.
+7. Determine risk_tolerance and scholarship_sensitivity.
+8. Identify if escalation_needed is True (e.g., no suitable matches or very weak profile).
+
+OUTPUT FORMAT:
+IMPORTANT: Even if you use the Web Agent, your final answer MUST BE Valid JSON exactly mapping to the AnalyzeResult schema without any surrounding text or markdown, because this will be parsed directly. Example:
+{{
+  "profile_summary": {{
+    "academic_strength": "strong",
+    "language_readiness": "ready",
+    "budget_band": "mid",
+    "scholarship_sensitivity": false,
+    "strengths": ["Strong GPA trend", "Research experience", "2× hackathon winner"],
+    "weaknesses": ["IELTS borderline for top-5 UK", "No SAT score"],
+    "risk_tolerance": "moderate"
+  }},
+  "recommendations": [
+    {{
+      "university_id": "uuid",
+      "university_name": "University of Edinburgh",
+      "tier": "safe",
+      "admission_likelihood_score": 82,
+      "student_fit_score": 91,
+      "reason": "GPA và IELTS vượt ngưỡng tối thiểu. Online check confirms late application still valid...",
+      "risks": ["Budget sát nếu không có scholarship"],
+      "improvements": ["Cân nhắc retake IELTS lên 7.5"],
+      "rank_order": 1
+    }}
+  ],
+  "confidence_score": 0.91,
+  "escalation_needed": false,
+  "escalation_reason": null
+}}
