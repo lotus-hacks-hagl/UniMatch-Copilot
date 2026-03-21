@@ -6,6 +6,7 @@ UniMatch Copilot is an AI-powered study-abroad counseling system that automates 
 ---
 
 ## System Architecture
+![System Architecture](https://i.ibb.co/fgpP88M/image.png)
 The system follows a decoupled, event-driven microservices architecture with clear separation between orchestration, AI processing, and data layers.
 
 ---
