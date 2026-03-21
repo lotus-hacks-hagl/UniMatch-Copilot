@@ -4,11 +4,12 @@ import (
 	"log"
 	"os"
 
+	"unimatch-be/internal/model"
+
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"unimatch-be/internal/model"
 )
 
 func main() {
@@ -19,7 +20,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin@123"), bcrypt.DefaultCost)
 	testUser := model.User{
 		Username:     "testadmin@unimatch.com",
 		PasswordHash: string(hashedPassword),
@@ -31,5 +32,5 @@ func main() {
 	if err := db.Create(&testUser).Error; err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Test user created: testadmin@unimatch.com / password123")
+	log.Println("Test user created: testadmin@unimatch.com / admin@123")
 }

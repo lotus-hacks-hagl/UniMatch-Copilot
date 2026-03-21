@@ -14,7 +14,7 @@ import (
 // @title UniMatch AI Service API
 // @version 1.0
 // @description Simple AI orchestration service for UniMatch using Exa and TinyFish with heuristic fallback.
-// @host localhost:9000
+// @host localhost:8895
 // @BasePath /
 func main() {
 	cfg := config.Load()

@@ -4,10 +4,10 @@ import time
 import requests
 
 
-BASE_URL = os.getenv("VERIFY_BASE_URL", "http://localhost:8080/api/v1")
-USERNAME = os.getenv("VERIFY_USERNAME", "testadmin@unimatch.com")
-PASSWORD = os.getenv("VERIFY_PASSWORD", "password123")
-AI_SERVICE_BASE_URL = os.getenv("VERIFY_AI_SERVICE_BASE_URL", "http://localhost:9000")
+BASE_URL = os.getenv("VERIFY_BASE_URL", "http://localhost:8894/api/v1")
+USERNAME = os.getenv("VERIFY_USERNAME", "admin@unimatch.com")
+PASSWORD = os.getenv("VERIFY_PASSWORD", "admin@123")
+AI_SERVICE_BASE_URL = os.getenv("VERIFY_AI_SERVICE_BASE_URL", "http://localhost:8895")
 VERIFY_DEBUG_JOBS = os.getenv("VERIFY_DEBUG_JOBS", "false").lower() == "true"
 
 

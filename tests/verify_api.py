@@ -3,7 +3,7 @@ import json
 import socket
 import time
 
-BASE_URL = 'http://localhost:8080/api/v1'
+BASE_URL = 'http://localhost:8894/api/v1'
 print("=== UniMatch API Integration Test ===")
 
 def check_port(port):
@@ -12,8 +12,8 @@ def check_port(port):
     sock.close()
     return result == 0
 
-if not check_port(8080):
-    print("Backend (Port 8080) is not running!")
+if not check_port(8894):
+    print("Backend (Port 8894) is not running!")
     exit(1)
 
 # 1. Test Auth (Register -> Login)

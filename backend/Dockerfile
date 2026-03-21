@@ -33,7 +33,7 @@ COPY --from=builder /app/bin/server .
 COPY --from=builder /app/migrations ./migrations
 
 # Expose port (must match PORT env)
-EXPOSE 8080
+EXPOSE 8894
 
 # Command to run the executable
 CMD ["./server"]

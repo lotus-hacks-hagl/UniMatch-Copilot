@@ -246,7 +246,7 @@ definitions:
         example: Resource not found
         type: string
     type: object
-host: localhost:8080
+host: localhost:8894
 info:
   contact: {}
   description: Backend API for UniMatch Copilot AI system

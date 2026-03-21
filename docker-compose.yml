@@ -18,9 +18,9 @@ services:
     image: unimatch-ai-service-local:latest
     container_name: unimatch_ai_service
     ports:
-      - "9000:9000"
+      - "8895:8895"
     environment:
-      - PORT=9000
+      - PORT=8895
       - ENV=development
       - EXA_API_KEY=${EXA_API_KEY}
       - TINYFISH_API_KEY=${TINYFISH_API_KEY}
@@ -33,12 +33,12 @@ services:
     image: unimatch-backend-local:latest
     container_name: unimatch_backend
     ports:
-      - "8080:8080"
+      - "8894:8894"
     environment:
-      - PORT=8080
+      - PORT=8894
       - DATABASE_URL=postgres://postgres:password@db:5432/unimatch_be?sslmode=disable
-      - AI_SERVICE_URL=http://ai-service-go:9000
-      - PUBLIC_BASE_URL=http://localhost:8080
+      - AI_SERVICE_URL=http://localhost:8895
+      - PUBLIC_BASE_URL=http://localhost:8894
       - ENV=development
     depends_on:
       - db

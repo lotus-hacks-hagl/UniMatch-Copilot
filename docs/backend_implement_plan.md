@@ -98,18 +98,18 @@ unimatch-be/
 type Config struct {
     Port          string
     DatabaseURL   string // postgres://user:pass@host:5432/dbname
-    AIServiceURL  string // http://localhost:9000
-    PublicBaseURL string // http://localhost:8080
+    AIServiceURL  string // http://localhost:8895
+    PublicBaseURL string // http://localhost:8894
     Env           string // development | production
 }
 
 func Load() *Config {
     godotenv.Load()
     return &Config{
-        Port:          getEnv("PORT", "8080"),
+        Port:          getEnv("PORT", "8894"),
         DatabaseURL:   mustEnv("DATABASE_URL"),
-        AIServiceURL:  getEnv("AI_SERVICE_URL", "http://localhost:9000"),
-        PublicBaseURL: getEnv("PUBLIC_BASE_URL", "http://localhost:8080"),
+        AIServiceURL:  getEnv("AI_SERVICE_URL", "http://localhost:8895"),
+        PublicBaseURL: getEnv("PUBLIC_BASE_URL", "http://localhost:8894"),
         Env:           getEnv("ENV", "development"),
     }
 }
@@ -117,10 +117,10 @@ func Load() *Config {
 
 **`.env`:**
 ```
-PORT=8080
+PORT=8894
 DATABASE_URL=postgres://postgres:password@localhost:5432/unimatch_be
-AI_SERVICE_URL=http://localhost:9000
-PUBLIC_BASE_URL=http://localhost:8080
+AI_SERVICE_URL=http://localhost:8895
+PUBLIC_BASE_URL=http://localhost:8894
 ENV=development
 ```
 
@@ -1116,10 +1116,10 @@ docker run -d --name pg-be -e POSTGRES_PASSWORD=password -e POSTGRES_DB=unimatch
 go run main.go
 
 # Verify
-curl http://localhost:8080/health
+curl http://localhost:8894/health
 # → {"status":"ok"}
 
-curl -X POST http://localhost:8080/api/v1/cases \
+curl -X POST http://localhost:8894/api/v1/cases \
   -H "Content-Type: application/json" \
   -d '{"full_name":"Test","gpa_normalized":3.5,"ielts_overall":7.0,"intended_major":"CS","budget_usd_per_year":30000,"preferred_countries":["UK"],"target_intake":"Fall 2026"}'
 ```

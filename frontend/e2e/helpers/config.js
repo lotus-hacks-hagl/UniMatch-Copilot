@@ -1,8 +1,8 @@
 export function getE2EConfig() {
   return {
     feBaseURL: process.env.E2E_FE_BASE_URL || 'http://127.0.0.1:5173',
-    apiBaseURL: process.env.E2E_API_BASE_URL || 'http://127.0.0.1:8080/api/v1',
-    aiBaseURL: process.env.E2E_AI_BASE_URL || 'http://127.0.0.1:9000',
+    apiBaseURL: process.env.E2E_API_BASE_URL || 'http://127.0.0.1:8894/api/v1',
+    aiBaseURL: process.env.E2E_AI_BASE_URL || 'http://127.0.0.1:8895',
     mode: process.env.E2E_MODE || 'deterministic',
     stack: process.env.E2E_STACK || 'auto',
     adminUsername: process.env.E2E_ADMIN_USERNAME || 'admin',

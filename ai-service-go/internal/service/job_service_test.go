@@ -330,7 +330,7 @@ func newTestJobService(t *testing.T, exa providerBehavior, tinyfish providerBeha
 	t.Cleanup(openAISrv.Close)
 
 	cfg := &config.Config{
-		Port:                "9000",
+		Port:                "8895",
 		Env:                 "test",
 		ExaAPIKey:           "exa-test",
 		TinyfishAPIKey:      "tinyfish-test",

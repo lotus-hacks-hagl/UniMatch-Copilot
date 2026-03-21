@@ -21,10 +21,10 @@ func Load() *Config {
 		log.Println("No .env file found, reading from environment")
 	}
 	return &Config{
-		Port:          getEnv("PORT", "8080"),
+		Port:          getEnv("PORT", "8894"),
 		DatabaseURL:   mustEnv("DATABASE_URL"),
-		AIServiceURL:  getEnv("AI_SERVICE_URL", "http://localhost:9000"),
-		PublicBaseURL: getEnv("PUBLIC_BASE_URL", "http://localhost:8080"),
+		AIServiceURL:  getEnv("AI_SERVICE_URL", "http://localhost:8895"),
+		PublicBaseURL: getEnv("PUBLIC_BASE_URL", "http://localhost:8894"),
 		Env:           getEnv("ENV", "development"),
 		JWTSecret:     getEnv("JWT_SECRET", "super-secret-unimatch-key-change-in-production"),
 	}

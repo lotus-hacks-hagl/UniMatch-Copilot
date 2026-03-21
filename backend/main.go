@@ -16,7 +16,7 @@ import (
 // @title UniMatch Copilot API
 // @version 1.0
 // @description Backend API for UniMatch Copilot AI system
-// @host localhost:8080
+// @host localhost:8894
 // @BasePath /api/v1
 // @securityDefinitions.apikey BearerAuth
 // @in header
