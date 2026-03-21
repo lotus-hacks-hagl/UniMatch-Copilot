@@ -10,3 +10,4 @@ anyio
 anthropic
 pydantic
 requests
+tf-playwright-stealth
