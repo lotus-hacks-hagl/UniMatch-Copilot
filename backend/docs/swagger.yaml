@@ -13,6 +13,18 @@ definitions:
           $ref: '#/definitions/dto.UniversityCount'
         type: array
     type: object
+  dto.AuthResponse:
+    properties:
+      expires_in:
+        description: Unix timestamp
+        type: integer
+      role:
+        type: string
+      token:
+        type: string
+      username:
+        type: string
+    type: object
   dto.CaseCreatedResponse:
     properties:
       case_id:
@@ -149,6 +161,29 @@ definitions:
       writing:
         type: number
     type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.RegisterRequest:
+    properties:
+      password:
+        minLength: 6
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
   dto.ReportStatusResponse:
     properties:
       case_id:
@@ -243,9 +278,120 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Get recent activity log
       tags:
       - dashboard
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and get JWT token
+      parameters:
+      - description: Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register the single internal admin account (fails if an account
+        already exists)
+      parameters:
+      - description: Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/swagger.SwaggerError'
+              type: object
+      summary: Register internal user
+      tags:
+      - auth
   /cases:
     get:
       description: Fetch paginated list of cases with optional status filter
@@ -286,6 +432,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: List cases
       tags:
       - cases
@@ -330,6 +478,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Create a new case
       tags:
       - cases
@@ -376,6 +526,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Get case details
       tags:
       - cases
@@ -427,6 +579,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Request PDF report generation
       tags:
       - cases
@@ -454,6 +608,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Count cases
       tags:
       - cases
@@ -481,6 +637,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Get detailed analytics
       tags:
       - dashboard
@@ -510,6 +668,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Get cases trend
       tags:
       - dashboard
@@ -539,6 +699,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Get escalation trend
       tags:
       - dashboard
@@ -566,6 +728,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Get dashboard stats
       tags:
       - dashboard
@@ -612,6 +776,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: List universities
       tags:
       - universities
@@ -651,6 +817,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Create university
       tags:
       - universities
@@ -673,6 +841,8 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Count active crawl jobs
       tags:
       - universities
@@ -701,7 +871,14 @@ paths:
                 error:
                   $ref: '#/definitions/swagger.SwaggerError'
               type: object
+      security:
+      - BearerAuth: []
       summary: Trigger crawl for all universities
       tags:
       - universities
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

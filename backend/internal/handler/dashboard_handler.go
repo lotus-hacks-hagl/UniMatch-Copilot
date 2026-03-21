@@ -24,6 +24,7 @@ func NewDashboardHandler(svc service.DashboardService) *DashboardHandler {
 // @Produce json
 // @Success 200 {object} response.Response{data=dto.DashboardStats}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /dashboard/stats [get]
 func (h *DashboardHandler) Stats(c *gin.Context) {
 	stats, appErr := h.svc.GetStats(c.Request.Context())
@@ -41,6 +42,7 @@ func (h *DashboardHandler) Stats(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} response.Response{data=[]dto.CasesByDay}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /dashboard/cases-by-day [get]
 func (h *DashboardHandler) CasesByDay(c *gin.Context) {
 	data, appErr := h.svc.GetCasesByDay(c.Request.Context())
@@ -58,6 +60,7 @@ func (h *DashboardHandler) CasesByDay(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} response.Response{data=[]dto.EscalationTrend}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /dashboard/escalation-trend [get]
 func (h *DashboardHandler) EscalationTrend(c *gin.Context) {
 	data, appErr := h.svc.GetEscalationTrend(c.Request.Context())
@@ -75,6 +78,7 @@ func (h *DashboardHandler) EscalationTrend(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} response.Response{data=dto.Analytics}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /dashboard/analytics [get]
 func (h *DashboardHandler) Analytics(c *gin.Context) {
 	data, appErr := h.svc.GetAnalytics(c.Request.Context())
@@ -93,6 +97,7 @@ func (h *DashboardHandler) Analytics(c *gin.Context) {
 // @Param limit query int false "Items per page" default(20)
 // @Success 200 {object} response.Response
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /activity-log [get]
 func (h *DashboardHandler) ActivityLog(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))

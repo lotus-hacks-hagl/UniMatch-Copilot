@@ -44,3 +44,11 @@ func Conflict(msg string) *AppError {
 func ServiceUnavailable(msg string) *AppError {
 	return &AppError{Code: ErrCodeServiceUnavailable, Message: msg, HTTPStatus: http.StatusServiceUnavailable}
 }
+
+func Unauthorized(msg string) *AppError {
+	return &AppError{Code: "UNAUTHORIZED", Message: msg, HTTPStatus: http.StatusUnauthorized}
+}
+
+func Forbidden(msg string) *AppError {
+	return &AppError{Code: "FORBIDDEN", Message: msg, HTTPStatus: http.StatusForbidden}
+}

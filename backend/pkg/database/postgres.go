@@ -28,6 +28,7 @@ func NewPostgres(dsn string) (*gorm.DB, error) {
 
 	// AutoMigrate — order matters for foreign keys
 	if err := db.AutoMigrate(
+		&model.User{},
 		&model.Student{},
 		&model.University{},
 		&model.Case{},

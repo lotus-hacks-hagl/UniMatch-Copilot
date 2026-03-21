@@ -18,6 +18,9 @@ import (
 // @description Backend API for UniMatch Copilot AI system
 // @host localhost:8080
 // @BasePath /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	// 1. Load config
 	cfg := config.Load()
@@ -32,24 +35,27 @@ func main() {
 	aiClient := client.NewAIClient(cfg.AIServiceURL)
 
 	// 4. Repositories
+	userRepo := repository.NewUserRepository(db)
 	caseRepo := repository.NewCaseRepository(db)
 	uniRepo  := repository.NewUniversityRepository(db)
 	actRepo  := repository.NewActivityRepository(db)
 	dashRepo := repository.NewDashboardRepository(db)
 
 	// 5. Services
+	authSvc := service.NewAuthService(userRepo, cfg)
 	caseSvc := service.NewCaseService(db, caseRepo, actRepo, aiClient, cfg)
 	uniSvc  := service.NewUniversityService(db, uniRepo, actRepo, aiClient, cfg)
 	dashSvc := service.NewDashboardService(dashRepo, actRepo)
 
 	// 6. Handlers
+	authH     := handler.NewAuthHandler(authSvc)
 	casesH    := handler.NewCasesHandler(caseSvc)
 	uniH      := handler.NewUniversitiesHandler(uniSvc)
 	dashH     := handler.NewDashboardHandler(dashSvc)
 	internalH := handler.NewInternalHandler(caseSvc, uniSvc)
 
 	// 7. Router
-	r := router.SetupRouter(casesH, uniH, dashH, internalH)
+	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH)
 
 	log.Printf("🚀 UniMatch-BE running on :%s (env: %s)", cfg.Port, cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

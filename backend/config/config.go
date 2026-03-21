@@ -13,6 +13,7 @@ type Config struct {
 	AIServiceURL  string
 	PublicBaseURL string
 	Env           string
+	JWTSecret     string
 }
 
 func Load() *Config {
@@ -25,6 +26,7 @@ func Load() *Config {
 		AIServiceURL:  getEnv("AI_SERVICE_URL", "http://localhost:9000"),
 		PublicBaseURL: getEnv("PUBLIC_BASE_URL", "http://localhost:8080"),
 		Env:           getEnv("ENV", "development"),
+		JWTSecret:     getEnv("JWT_SECRET", "super-secret-unimatch-key-change-in-production"),
 	}
 }
 

@@ -32,6 +32,7 @@ func NewUniversitiesHandler(svc service.UniversityService) *UniversitiesHandler 
 // @Param limit query int false "Items per page" default(20)
 // @Success 200 {object} response.Response{meta=response.Meta}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /universities [get]
 func (h *UniversitiesHandler) List(c *gin.Context) {
 	country := c.Query("country")
@@ -66,6 +67,7 @@ func (h *UniversitiesHandler) List(c *gin.Context) {
 // @Success 201 {object} response.Response
 // @Failure 400 {object} response.Response{error=swagger.SwaggerError}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /universities [post]
 func (h *UniversitiesHandler) Create(c *gin.Context) {
 	var req dto.CreateUniversityRequest
@@ -93,6 +95,7 @@ func (h *UniversitiesHandler) Create(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} response.Response{data=dto.CrawlAllResponse}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /universities/crawl-all [post]
 func (h *UniversitiesHandler) CrawlAll(c *gin.Context) {
 	count, appErr := h.svc.CrawlAll(c.Request.Context())
@@ -110,6 +113,7 @@ func (h *UniversitiesHandler) CrawlAll(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} response.Response
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /universities/crawl-active [get]
 func (h *UniversitiesHandler) CrawlActiveCount(c *gin.Context) {
 	count, appErr := h.svc.CountActiveCrawls(c.Request.Context())

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"unimatch-be/config"
 	"unimatch-be/internal/handler"
 	"unimatch-be/internal/middleware"
 
@@ -13,6 +14,8 @@ import (
 )
 
 func SetupRouter(
+	cfg       *config.Config,
+	authH     *handler.AuthHandler,
 	casesH    *handler.CasesHandler,
 	uniH      *handler.UniversitiesHandler,
 	dashH     *handler.DashboardHandler,
@@ -39,36 +42,48 @@ func SetupRouter(
 
 	api := r.Group("/api/v1")
 	{
-		// Cases routes
-		cases := api.Group("/cases")
+		// Public Auth routes
+		auth := api.Group("/auth")
 		{
-			cases.POST("", casesH.Create)
-			cases.GET("", casesH.List)
-			cases.GET("/count", casesH.Count)
-			cases.GET("/:id", casesH.GetByID)
-			cases.POST("/:id/report", casesH.RequestReport)
+			auth.POST("/register", authH.Register)
+			auth.POST("/login", authH.Login)
 		}
 
-		// Universities routes
-		unis := api.Group("/universities")
+		// Protected routes
+		protected := api.Group("/")
+		protected.Use(middleware.Auth(cfg))
 		{
-			unis.GET("", uniH.List)
-			unis.POST("", uniH.Create)
-			unis.POST("/crawl-all", uniH.CrawlAll)
-			unis.GET("/crawl-active", uniH.CrawlActiveCount)
-		}
+			// Cases routes
+			cases := protected.Group("/cases")
+			{
+				cases.POST("", casesH.Create)
+				cases.GET("", casesH.List)
+				cases.GET("/count", casesH.Count)
+				cases.GET("/:id", casesH.GetByID)
+				cases.POST("/:id/report", casesH.RequestReport)
+			}
 
-		// Dashboard routes
-		dash := api.Group("/dashboard")
-		{
-			dash.GET("/stats", dashH.Stats)
-			dash.GET("/cases-by-day", dashH.CasesByDay)
-			dash.GET("/escalation-trend", dashH.EscalationTrend)
-			dash.GET("/analytics", dashH.Analytics)
-		}
+			// Universities routes
+			unis := protected.Group("/universities")
+			{
+				unis.GET("", uniH.List)
+				unis.POST("", uniH.Create)
+				unis.POST("/crawl-all", uniH.CrawlAll)
+				unis.GET("/crawl-active", uniH.CrawlActiveCount)
+			}
 
-		// Activity log
-		api.GET("/activity-log", dashH.ActivityLog)
+			// Dashboard routes
+			dash := protected.Group("/dashboard")
+			{
+				dash.GET("/stats", dashH.Stats)
+				dash.GET("/cases-by-day", dashH.CasesByDay)
+				dash.GET("/escalation-trend", dashH.EscalationTrend)
+				dash.GET("/analytics", dashH.Analytics)
+			}
+
+			// Activity log
+			protected.GET("/activity-log", dashH.ActivityLog)
+		}
 	}
 
 	return r

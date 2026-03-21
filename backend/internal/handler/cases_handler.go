@@ -32,6 +32,7 @@ func NewCasesHandler(svc service.CaseService) *CasesHandler {
 // @Success 201 {object} response.Response{data=dto.CaseCreatedResponse}
 // @Failure 400 {object} response.Response{error=swagger.SwaggerError}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /cases [post]
 func (h *CasesHandler) Create(c *gin.Context) {
 	var req dto.CreateCaseRequest
@@ -66,6 +67,7 @@ func (h *CasesHandler) Create(c *gin.Context) {
 // @Param limit query int false "Items per page" default(20)
 // @Success 200 {object} response.Response{meta=response.Meta}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /cases [get]
 func (h *CasesHandler) List(c *gin.Context) {
 	status := c.Query("status")
@@ -97,6 +99,7 @@ func (h *CasesHandler) List(c *gin.Context) {
 // @Param status query string false "Filter by case status"
 // @Success 200 {object} response.Response
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /cases/count [get]
 func (h *CasesHandler) Count(c *gin.Context) {
 	status := c.Query("status")
@@ -118,6 +121,7 @@ func (h *CasesHandler) Count(c *gin.Context) {
 // @Failure 400 {object} response.Response{error=swagger.SwaggerError}
 // @Failure 404 {object} response.Response{error=swagger.SwaggerError}
 // @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /cases/{id} [get]
 func (h *CasesHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
@@ -143,6 +147,7 @@ func (h *CasesHandler) GetByID(c *gin.Context) {
 // @Failure 400 {object} response.Response{error=swagger.SwaggerError}
 // @Failure 404 {object} response.Response{error=swagger.SwaggerError}
 // @Failure 503 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
 // @Router /cases/{id}/report [post]
 func (h *CasesHandler) RequestReport(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
