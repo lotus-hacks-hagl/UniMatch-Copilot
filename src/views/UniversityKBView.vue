@@ -2,7 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { api } from '../services/api'
 import { useToast } from '../composables/useToast'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const kbs = ref([])
 const totalKbs = ref(0)
 const loading = ref(true)
@@ -49,21 +51,21 @@ const addUniversity = async () => {
       acceptance_rate: formData.value.acceptance ? parseFloat(formData.value.acceptance)/100 : null,
       tuition_usd_per_year: parseInt(formData.value.tuition.replace(/\D/g,'')) || null
     })
-    toast.addToast('University added successfully', 'success')
+    toast.addToast(t('universityKb.toasts.addSuccess'), 'success')
     showModal.value = false
     formData.value = { name: '', location: '', rank: '', acceptance: '', tuition: '' }
     await fetchUniversities()
   } catch(err) {
-    toast.addToast('Failed to add university', 'error')
+    toast.addToast(t('universityKb.toasts.addFail'), 'error')
   }
 }
 
 const runSync = async () => {
   try {
     await api.post('/universities/crawl-all')
-    toast.addToast('TinyFish crawl started in background', 'success')
+    toast.addToast(t('universityKb.toasts.syncSuccess'), 'success')
   } catch (error) {
-    toast.addToast('Failed to trigger Sync', 'error')
+    toast.addToast(t('universityKb.toasts.syncFail'), 'error')
   }
 }
 </script>
@@ -72,33 +74,33 @@ const runSync = async () => {
   <div class="px-7 py-6 max-w-[1200px] mx-auto space-y-6 relative">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-xl font-bold text-text">University Knowledge Base</h2>
-        <p class="text-[13px] text-text-muted mt-1">Explore and filter {{ totalKbs }} synced global universities.</p>
+        <h2 class="text-xl font-bold text-text">{{ $t('universityKb.title') }}</h2>
+        <p class="text-[13px] text-text-muted mt-1">{{ $t('universityKb.subtitle', { count: totalKbs }) }}</p>
       </div>
       <div class="flex items-center gap-3">
         <div class="relative">
-          <input type="text" placeholder="Search univesities..." class="pl-8 pr-3 py-2 text-[13px] bg-surface border border-black/10 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg w-[260px]" />
+          <input type="text" :placeholder="$t('universityKb.search')" class="pl-8 pr-3 py-2 text-[13px] bg-surface border border-black/10 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg w-[260px]" />
           <svg class="w-4 h-4 text-text-muted absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
         <button @click="runSync" class="px-4 py-2 bg-surface text-text border border-black/10 rounded-lg text-[13px] font-medium hover:bg-bg shadow-sm transition-colors flex items-center gap-2">
-          Sync KB
+          {{ $t('universityKb.sync') }}
         </button>
         <button @click="showModal = true" class="px-4 py-2 bg-primary text-white border border-primary rounded-lg text-[13px] font-medium hover:bg-primary-hover shadow-sm transition-colors">
-          + Add University
+          {{ $t('universityKb.add') }}
         </button>
       </div>
     </div>
 
     <div class="bg-surface rounded-xl border border-black/5 shadow-sm overflow-hidden">
-      <div v-if="loading" class="p-10 text-center text-text-muted text-[13px]">Loading DB...</div>
+      <div v-if="loading" class="p-10 text-center text-text-muted text-[13px]">{{ $t('universityKb.loading') }}</div>
       <table v-else class="w-full text-left">
         <thead>
           <tr class="text-[11px] text-text-muted uppercase tracking-wider border-b border-black/5 bg-bg/50">
-            <th class="px-5 py-3 font-medium">Global Rank</th>
-            <th class="px-5 py-3 font-medium">Institution</th>
-            <th class="px-5 py-3 font-medium">Location</th>
-            <th class="px-5 py-3 font-medium">Acceptance Rate</th>
-            <th class="px-5 py-3 font-medium">Tuition (Est.)</th>
+            <th class="px-5 py-3 font-medium">{{ $t('universityKb.table.rank') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('universityKb.table.institution') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('universityKb.table.location') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('universityKb.table.acceptance') }}</th>
+            <th class="px-5 py-3 font-medium">{{ $t('universityKb.table.tuition') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-black/5 text-[13px]">
@@ -125,7 +127,7 @@ const runSync = async () => {
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showModal = false"></div>
       <div class="bg-surface w-full max-w-md rounded-xl shadow-xl border border-black/10 relative z-10 p-6 animate-fade-in">
         <div class="flex items-center justify-between mb-5">
-           <h3 class="text-lg font-bold text-text">Add University</h3>
+           <h3 class="text-lg font-bold text-text">{{ $t('universityKb.modal.title') }}</h3>
            <button @click="showModal = false" class="text-text-muted hover:text-text transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
            </button>
@@ -133,33 +135,33 @@ const runSync = async () => {
         
         <form @submit.prevent="addUniversity" class="space-y-4">
           <div>
-            <label class="block text-[13px] font-medium text-text mb-1">Institution Name</label>
+            <label class="block text-[13px] font-medium text-text mb-1">{{ $t('universityKb.modal.name') }}</label>
             <input required v-model="formData.name" type="text" class="w-full px-3 py-2 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg" placeholder="e.g. Oxford University" />
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[13px] font-medium text-text mb-1">Location</label>
+              <label class="block text-[13px] font-medium text-text mb-1">{{ $t('universityKb.modal.location') }}</label>
               <input required v-model="formData.location" type="text" class="w-full px-3 py-2 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg" placeholder="e.g. Oxford, UK" />
             </div>
             <div>
-              <label class="block text-[13px] font-medium text-text mb-1">Global Rank</label>
+              <label class="block text-[13px] font-medium text-text mb-1">{{ $t('universityKb.modal.rank') }}</label>
               <input required v-model="formData.rank" type="number" class="w-full px-3 py-2 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg" placeholder="e.g. 5" />
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[13px] font-medium text-text mb-1">Acceptance Rate</label>
+              <label class="block text-[13px] font-medium text-text mb-1">{{ $t('universityKb.modal.acceptance') }}</label>
               <input required v-model="formData.acceptance" type="text" class="w-full px-3 py-2 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg" placeholder="e.g. 17.5%" />
             </div>
             <div>
-              <label class="block text-[13px] font-medium text-text mb-1">Tuition (Est.)</label>
+              <label class="block text-[13px] font-medium text-text mb-1">{{ $t('universityKb.modal.tuition') }}</label>
               <input required v-model="formData.tuition" type="text" class="w-full px-3 py-2 rounded-lg border-black/10 text-[13px] focus:ring-1 focus:ring-primary focus:border-primary bg-bg" placeholder="e.g. £30,000" />
             </div>
           </div>
           
           <div class="pt-4 flex items-center justify-end gap-3 mt-6 border-t border-black/5">
-            <button type="button" @click="showModal = false" class="px-4 py-2 text-[13px] font-medium text-text hover:bg-bg rounded-lg transition-colors border border-black/10">Cancel</button>
-            <button type="submit" class="px-4 py-2 text-[13px] font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-colors shadow-sm">Save University</button>
+            <button type="button" @click="showModal = false" class="px-4 py-2 text-[13px] font-medium text-text hover:bg-bg rounded-lg transition-colors border border-black/10">{{ $t('universityKb.modal.cancel') }}</button>
+            <button type="submit" class="px-4 py-2 text-[13px] font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-colors shadow-sm">{{ $t('universityKb.modal.save') }}</button>
           </div>
         </form>
       </div>

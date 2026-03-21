@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../services/api'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 const queue = ref([])
 const loading = ref(true)
 
@@ -32,11 +34,11 @@ const getSlaInfo = (createdAt) => {
   const deadlineMs = createdDate.getTime() + 8 * 3600 * 1000
   const leftMs = deadlineMs - Date.now()
   
-  if (leftMs <= 0) return { text: 'Overdue', class: 'text-reach bg-reach/10 border-reach/20' }
+  if (leftMs <= 0) return { text: t('reviewQueue.overdue'), class: 'text-reach bg-reach/10 border-reach/20' }
   const leftHrs = Math.floor(leftMs / 3600000)
   const leftMins = Math.floor((leftMs % 3600000) / 60000)
   
-  const text = `${leftHrs}h ${leftMins}m left`
+  const text = t('reviewQueue.timeLeft', { hrs: leftHrs, mins: leftMins })
   let css = 'text-safe bg-safe/10 border-safe/20'
   if (leftHrs < 2) css = 'text-reach bg-reach/10 border-reach/20'
   else if (leftHrs < 4) css = 'text-match bg-match/10 border-match/20'
@@ -49,8 +51,8 @@ const getSlaInfo = (createdAt) => {
   <div class="px-7 py-6 max-w-[1200px] mx-auto space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-xl font-bold text-text">Review Queue</h2>
-        <p class="text-[13px] text-text-muted mt-1">Cases flagged by AI needing human escalation.</p>
+        <h2 class="text-xl font-bold text-text">{{ $t('reviewQueue.title') }}</h2>
+        <p class="text-[13px] text-text-muted mt-1">{{ $t('reviewQueue.subtitle') }}</p>
       </div>
       <div>
         <button @click="fetchQueue" class="p-2 border border-black/10 rounded-lg hover:bg-bg transition-colors" title="Refresh">
@@ -61,13 +63,13 @@ const getSlaInfo = (createdAt) => {
 
     <!-- Active List -->
     <div class="bg-surface rounded-xl border border-black/5 shadow-sm overflow-hidden">
-      <div v-if="loading" class="p-10 text-center text-text-muted text-[13px]">Loading queue...</div>
+      <div v-if="loading" class="p-10 text-center text-text-muted text-[13px]">{{ $t('reviewQueue.loading') }}</div>
       <div v-else-if="queue.length === 0" class="p-12 flex flex-col items-center justify-center text-center">
         <div class="w-16 h-16 bg-safe/10 rounded-full flex items-center justify-center mb-4">
           <svg class="w-8 h-8 text-safe" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
         </div>
-        <h3 class="text-[15px] font-bold text-text mb-1">Queue is empty!</h3>
-        <p class="text-[13px] text-text-muted">All escalated cases have been cleared.</p>
+        <h3 class="text-[15px] font-bold text-text mb-1">{{ $t('reviewQueue.empty') }}</h3>
+        <p class="text-[13px] text-text-muted">{{ $t('reviewQueue.cleared') }}</p>
       </div>
 
       <div v-else class="divide-y divide-black/5">
@@ -82,29 +84,29 @@ const getSlaInfo = (createdAt) => {
             </div>
             <div>
               <div class="font-bold text-text mb-0.5">{{ c.student?.full_name }}</div>
-              <div class="text-[11px] text-text-muted">Case ID: <span class="font-mono text-[10px]">{{ c.id.substring(0,8) }}</span></div>
+              <div class="text-[11px] text-text-muted">{{ $t('reviewQueue.caseId') }} <span class="font-mono text-[10px]">{{ c.id.substring(0,8) }}</span></div>
             </div>
           </div>
 
           <div class="w-1/3 px-4 border-l border-black/5">
             <div class="text-[12px] font-medium text-reach mb-1 flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-              Escalation Reason
+              {{ $t('reviewQueue.escalationReason') }}
             </div>
             <div class="text-[13px] text-text-muted line-clamp-2">
-              {{ c.escalation_reason || 'AI failed to determine definite matching strategy.' }}
+              {{ c.escalation_reason || $t('reviewQueue.defaultReason') }}
             </div>
           </div>
 
           <div class="w-1/3 flex justify-end gap-6 items-center">
              <div class="text-right">
-               <div class="text-[11px] text-text-muted uppercase tracking-wider mb-1 mt-0.5">SLA Deadline</div>
+               <div class="text-[11px] text-text-muted uppercase tracking-wider mb-1 mt-0.5">{{ $t('reviewQueue.slaDeadline') }}</div>
                <span class="px-2 py-0.5 rounded text-[11px] font-bold border" :class="getSlaInfo(c.created_at).class">
                  {{ getSlaInfo(c.created_at).text }}
                </span>
              </div>
              <button @click="router.push('/cases/' + c.id)" class="px-5 py-2 text-[13px] font-medium bg-primary text-white hover:bg-primary-hover rounded-lg transition-colors shadow-sm whitespace-nowrap">
-               Review Case
+               {{ $t('reviewQueue.reviewCase') }}
              </button>
           </div>
 

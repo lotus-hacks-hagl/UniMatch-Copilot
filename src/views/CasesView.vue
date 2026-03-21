@@ -3,10 +3,12 @@ import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useCasesStore } from '../stores/casesStore'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const casesStore = useCasesStore()
 const { cases, stats, filter: activeFilter } = storeToRefs(casesStore)
+const { t } = useI18n()
 
 const filters = ['All cases', 'Done', 'Processing', 'Human review']
 
@@ -28,10 +30,10 @@ const getStatusClass = (statusStr) => {
 
 const getStatusLabel = (statusStr) => {
   const status = (statusStr || '').toLowerCase()
-  if (status === 'human_review') return 'Human review'
-  if (status === 'done') return 'Done'
-  if (status === 'processing') return 'Processing'
-  return statusStr || 'Pending'
+  if (status === 'human_review') return t('cases.filters.Human review')
+  if (status === 'done') return t('cases.filters.Done')
+  if (status === 'processing') return t('cases.filters.Processing')
+  return statusStr || t('cases.pendingAi')
 }
 
 const getAvatar = (name) => {
@@ -42,7 +44,7 @@ const getAvatar = (name) => {
 }
 
 const formatBudget = (val) => {
-  if (!val) return 'No budget'
+  if (!val) return t('cases.noBudget')
   return `$${Math.round(val/1000)}k/yr`
 }
 
@@ -62,13 +64,13 @@ const formatConfidence = (val) => {
 }
 
 const formatRelativeTime = (dateStr) => {
-  if (!dateStr) return 'Unknown'
+  if (!dateStr) return t('cases.unknown')
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return `${mins}${t('cases.m')} ${t('cases.ago')}`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
+  if (hrs < 24) return `${hrs}${t('cases.h')} ${t('cases.ago')}`
+  return `${Math.floor(hrs / 24)}${t('cases.d')} ${t('cases.ago')}`
 }
 </script>
 
@@ -79,25 +81,25 @@ const formatRelativeTime = (dateStr) => {
     <div class="grid grid-cols-4 gap-4">
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
         <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">Cases today</div>
+        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">{{ $t('cases.casesToday') }}</div>
         <div class="text-2xl font-bold text-text mb-1">{{ stats.casesToday || 0 }}</div>
       </div>
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
         <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">Avg processing</div>
+        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">{{ $t('cases.avgProcessing') }}</div>
         <div class="text-2xl font-bold text-text mb-1">{{ stats.avgProcessingTime || '0m' }}</div>
       </div>
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
         <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
         <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">
-          Awaiting review
+          {{ $t('cases.awaitingReview') }}
           <span v-if="stats.awaitingReview > 0" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
         </div>
         <div class="text-2xl font-bold text-text mb-1">{{ stats.awaitingReview || 0 }}</div>
       </div>
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
         <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">AI Confidence</div>
+        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">{{ $t('cases.aiConfidence') }}</div>
         <div class="text-2xl font-bold text-text mb-1">{{ formatConfidence(stats.aiConfidenceAvg) }}%</div>
       </div>
     </div>
@@ -114,12 +116,12 @@ const formatRelativeTime = (dateStr) => {
             class="py-3.5 text-[13px] font-medium border-b-2 transition-colors"
             :class="activeFilter === f ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
           >
-            {{ f }}
+            {{ $t('cases.filters.' + f) }}
           </button>
         </div>
         <div class="flex items-center gap-3">
           <div class="relative">
-            <input type="text" placeholder="Search cases..." class="pl-8 pr-3 py-1.5 text-[13px] bg-bg border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg w-[200px]" />
+            <input type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-8 pr-3 py-1.5 text-[13px] bg-bg border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg w-[200px]" />
             <svg class="w-4 h-4 text-text-muted absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </div>
           <button class="p-1.5 rounded text-text-muted border border-black/10 hover:bg-bg transition-colors">
@@ -130,16 +132,16 @@ const formatRelativeTime = (dateStr) => {
 
       <!-- Table -->
       <div class="overflow-x-auto min-h-[300px]">
-        <div v-if="casesStore.loading" class="flex items-center justify-center h-[300px] text-text-muted">Loading cases...</div>
+        <div v-if="casesStore.loading" class="flex items-center justify-center h-[300px] text-text-muted">{{ $t('cases.loading') }}</div>
         <table v-else-if="cases.length > 0" class="w-full text-left border-collapse">
           <thead>
             <tr class="text-[11px] text-text-muted uppercase tracking-wider border-b border-black/5">
-              <th class="px-5 py-3 font-medium">Student</th>
-              <th class="px-5 py-3 font-medium">Profile</th>
-              <th class="px-5 py-3 font-medium">Target</th>
-              <th class="px-5 py-3 font-medium">AI Match</th>
-              <th class="px-5 py-3 font-medium cursor-pointer flex items-center gap-1 hover:text-text hover:underline decoration-primary/20 underline-offset-4">Confidence <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></th>
-              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 font-medium">{{ $t('cases.table.student') }}</th>
+              <th class="px-5 py-3 font-medium">{{ $t('cases.table.profile') }}</th>
+              <th class="px-5 py-3 font-medium">{{ $t('cases.table.target') }}</th>
+              <th class="px-5 py-3 font-medium">{{ $t('cases.table.aiMatch') }}</th>
+              <th class="px-5 py-3 font-medium cursor-pointer flex items-center gap-1 hover:text-text hover:underline decoration-primary/20 underline-offset-4">{{ $t('cases.table.confidence') }} <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></th>
+              <th class="px-5 py-3 font-medium">{{ $t('cases.table.status') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-black/5 text-[13px]">
@@ -170,11 +172,11 @@ const formatRelativeTime = (dateStr) => {
               </td>
               <td class="px-5 py-3">
                 <div class="flex gap-1.5" v-if="c.recommendations">
-                  <span v-if="getTiers(c.recommendations).safe > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-safe/10 text-safe border border-safe/20">{{ getTiers(c.recommendations).safe }} Safe</span>
-                  <span v-if="getTiers(c.recommendations).match > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-match/10 text-match border border-match/20">{{ getTiers(c.recommendations).match }} Match</span>
-                  <span v-if="getTiers(c.recommendations).reach > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-reach/10 text-reach border border-reach/20">{{ getTiers(c.recommendations).reach }} Reach</span>
+                  <span v-if="getTiers(c.recommendations).safe > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-safe/10 text-safe border border-safe/20">{{ getTiers(c.recommendations).safe }} {{ $t('cases.tiers.safe') }}</span>
+                  <span v-if="getTiers(c.recommendations).match > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-match/10 text-match border border-match/20">{{ getTiers(c.recommendations).match }} {{ $t('cases.tiers.match') }}</span>
+                  <span v-if="getTiers(c.recommendations).reach > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-reach/10 text-reach border border-reach/20">{{ getTiers(c.recommendations).reach }} {{ $t('cases.tiers.reach') }}</span>
                 </div>
-                <div v-else class="text-text-muted text-[11px]">Pending AI</div>
+                <div v-else class="text-text-muted text-[11px]">{{ $t('cases.pendingAi') }}</div>
               </td>
               <td class="px-5 py-3">
                 <div class="flex items-center gap-2">
@@ -201,7 +203,7 @@ const formatRelativeTime = (dateStr) => {
         </table>
         <div v-else class="flex flex-col items-center justify-center p-12 h-[300px] bg-surfacce rounded-lg border-2 border-dashed border-black/10 mx-5 my-5">
           <svg class="w-10 h-10 text-black/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-          <p class="text-[13px] text-text-muted">No cases found matching the criteria.</p>
+          <p class="text-[13px] text-text-muted">{{ $t('cases.noCases') }}</p>
         </div>
       </div>
     </div>
@@ -210,7 +212,7 @@ const formatRelativeTime = (dateStr) => {
     <div class="grid grid-cols-3 gap-4">
       <!-- Empty charts placeholder to preserve UI layout -->
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
-        <div class="text-[13px] text-text-muted mb-4 font-medium">Cases per day</div>
+        <div class="text-[13px] text-text-muted mb-4 font-medium">{{ $t('cases.charts.casesPerDay') }}</div>
         <div class="h-24 flex items-end gap-2 justify-between">
           <div class="w-full bg-primary/20 hover:bg-primary transition-colors rounded-t" style="height: 40%"></div>
           <div class="w-full bg-primary/20 hover:bg-primary transition-colors rounded-t" style="height: 60%"></div>
@@ -222,7 +224,7 @@ const formatRelativeTime = (dateStr) => {
         </div>
       </div>
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
-        <div class="text-[13px] text-text-muted mb-4 font-medium flex justify-between">Match tier distribution <span class="text-safe">Safe</span></div>
+        <div class="text-[13px] text-text-muted mb-4 font-medium flex justify-between">{{ $t('cases.charts.matchTierDist') }} <span class="text-safe">{{ $t('cases.tiers.safe') }}</span></div>
         <div class="h-24 flex items-center justify-center relative">
           <!-- Fake Donut -->
           <div class="w-20 h-20 rounded-full border-4 border-t-safe border-r-match border-b-reach border-l-gray-100 flex items-center justify-center">
@@ -231,7 +233,7 @@ const formatRelativeTime = (dateStr) => {
         </div>
       </div>
       <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
-        <div class="text-[13px] text-text-muted mb-4 font-medium">Escalation rate trend</div>
+        <div class="text-[13px] text-text-muted mb-4 font-medium">{{ $t('cases.charts.escalationRate') }}</div>
         <div class="h-24 relative overflow-hidden">
            <svg viewBox="0 0 100 40" class="w-full h-full preserve-aspect-ratio cursor-pointer group">
              <path d="M0,35 Q10,30 20,32 T40,20 T60,25 T80,10 T100,5" fill="none" class="stroke-reach opacity-50 group-hover:opacity-100 transition-opacity" stroke-width="2" stroke-linecap="round"/>

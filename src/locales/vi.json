@@ -1,0 +1,145 @@
+{
+  "common": {
+    "dashboard": "Bảng điều khiển",
+    "students": "Sinh viên",
+    "cases": "Hồ sơ",
+    "reviews": "Hàng chờ duyệt",
+    "analytics": "Phân tích",
+    "kb": "K.Thức Trường",
+    "settings": "Cài đặt",
+    "search": "Tìm kiếm...",
+    "language": "Ngôn ngữ",
+    "export": "Xuất dữ liệu",
+    "newCase": "Tạo hồ sơ"
+  },
+  "caseDetail": {
+    "loading": "Đang tải chi tiết hồ sơ...",
+    "student": "Sinh viên",
+    "aiMatchVerdict": "AI Đánh Giá Độ Phù Hợp",
+    "escalatedReview": "Chuyển cho người xét duyệt do có các trường hợp đặc biệt.",
+    "autoApproved": "Hồ sơ tự động phê duyệt dựa trên dữ liệu trúng tuyển lịch sử.",
+    "gpaNorm": "GPA (Chuẩn hoá)",
+    "ielts": "IELTS",
+    "budget": "Ngân sách",
+    "noBudget": "Không có",
+    "countries": "Quốc gia",
+    "any": "Bất kỳ",
+    "strengths": "Điểm mạnh",
+    "risks": "Rủi ro",
+    "generateReport": "Tạo Báo Cáo PDF",
+    "tabs": {
+      "profile": "Hồ sơ",
+      "aiAnalysis": "AI Phân tích",
+      "documents": "Tài liệu",
+      "communication": "Trao đổi"
+    },
+    "fullBackground": "Chi Tiết Bối Cảnh Sinh Viên",
+    "extracurriculars": "Hoạt động ngoại khoá",
+    "achievements": "Thành tích",
+    "noneRecorded": "Không có dữ liệu",
+    "aiAnalyzing": "AI đang phân tích hồ sơ và tìm kiếm trường đại học...",
+    "noRecommendations": "Không có đề xuất nào được tạo cho hồ sơ này.",
+    "likelihood": "Khả năng",
+    "fit": "Độ phù hợp",
+    "rank": "Xếp hạng",
+    "underConstruction": "Phần này đang được xây dựng"
+  },
+  "analytics": {
+    "title": "Phân tích tư vấn viên",
+    "loading": "Đang tải dữ liệu...",
+    "placementRate": "Tỉ lệ trúng tuyển",
+    "avgScholarship": "Học bổng TB",
+    "timeSaved": "T.gian AI tiết kiệm",
+    "clientSatisfaction": "Độ hài lòng của khách",
+    "placementsByRegion": "Phân bố khu vực"
+  },
+  "cases": {
+    "filters": {
+      "All cases": "Tất cả hồ sơ",
+      "Done": "Hoàn tất",
+      "Processing": "Đang xử lý",
+      "Human review": "Chờ duyệt thủ công"
+    },
+    "casesToday": "Hồ sơ hôm nay",
+    "avgProcessing": "T.gian xử lý TB",
+    "awaitingReview": "Đang chờ duyệt",
+    "aiConfidence": "Độ tự tin AI",
+    "searchPlaceholder": "Tìm kiếm hồ sơ...",
+    "loading": "Đang tải hồ sơ...",
+    "table": {
+      "student": "Sinh viên",
+      "profile": "Hồ sơ",
+      "target": "Mục tiêu",
+      "aiMatch": "AI Phù hợp",
+      "confidence": "Độ tự tin",
+      "status": "Trạng thái"
+    },
+    "tiers": {
+      "safe": "An toàn",
+      "match": "Phù hợp",
+      "reach": "Thử thách"
+    },
+    "pendingAi": "Chờ AI phân tích",
+    "noCases": "Không tìm thấy hồ sơ nào khớp với bộ lọc.",
+    "charts": {
+      "casesPerDay": "Hồ sơ theo ngày",
+      "matchTierDist": "Phân bố độ phù hợp",
+      "escalationRate": "Tỉ lệ chuyển thủ công"
+    },
+    "noBudget": "Không r.buộc",
+    "unknown": "K.Rõ",
+    "m": "p",
+    "h": "g",
+    "d": "n",
+    "ago": "trước"
+  },
+  "reviewQueue": {
+    "title": "Hàng chờ xét duyệt",
+    "subtitle": "Các hồ sơ do AI đánh dấu cần can thiệp thủ công.",
+    "loading": "Đang tải hàng chờ...",
+    "empty": "Hàng chờ trống!",
+    "cleared": "Tất cả hồ sơ đặc biệt đã được xử lý.",
+    "caseId": "Mã hồ sơ:",
+    "escalationReason": "Lý do can thiệp",
+    "defaultReason": "AI không thể xác định chiến lược phù hợp rõ ràng.",
+    "slaDeadline": "Hạn chót xử lý",
+    "reviewCase": "Xét duyệt hồ sơ",
+    "overdue": "Quá hạn",
+    "timeLeft": "Còn {hrs}g {mins}p"
+  },
+  "universityKb": {
+    "title": "Cơ sở dữ liệu Trường ĐH",
+    "subtitle": "Khám phá và lọc {count} trường đại học toàn cầu đã đồng bộ.",
+    "search": "Tìm kiếm trường...",
+    "sync": "Đồng bộ",
+    "add": "+ Thêm trường",
+    "loading": "Đang tải dữ liệu...",
+    "table": {
+      "rank": "Xếp hạng T.Cầu",
+      "institution": "Tên trường",
+      "location": "Vị trí",
+      "acceptance": "Tỉ lệ nhận",
+      "tuition": "Học phí (Ước tính)"
+    },
+    "modal": {
+      "title": "Thêm trường ĐH",
+      "name": "Tên trường",
+      "location": "Vị trí",
+      "rank": "Xếp hạng toàn cầu",
+      "acceptance": "Tỉ lệ nhận",
+      "tuition": "Học phí (Ước tính)",
+      "cancel": "Hủy",
+      "save": "Lưu thông tin"
+    },
+    "toasts": {
+      "addSuccess": "Thêm trường thành công",
+      "addFail": "Thêm trường thất bại",
+      "syncSuccess": "Quá trình thu thập dữ liệu TinyFish đã bắt đầu ngầm",
+      "syncFail": "Kích hoạt đồng bộ thất bại"
+    }
+  },
+  "students": {
+    "title": "Sinh viên",
+    "placeholder": "Nội dung phần Sinh viên đang được xây dựng."
+  }
+}

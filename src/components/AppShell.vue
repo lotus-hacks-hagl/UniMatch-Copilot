@@ -2,10 +2,12 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueueStore } from '../stores/queueStore'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const queueStore = useQueueStore()
+const { t, locale } = useI18n()
 
 let syncInterval = null
 
@@ -22,17 +24,21 @@ onUnmounted(() => {
   if (syncInterval) clearInterval(syncInterval)
 })
 
-const navItems = [
-  { name: 'Cases', path: '/cases', iconColor: 'bg-primary' },
-  { name: 'Students', path: '/students', iconColor: 'bg-gray-300' },
-  { name: 'Review queue', path: '/queues', iconColor: 'bg-red-500', badge: computed(() => queueStore.pendingCount) },
-  { name: 'University KB', path: '/universities', iconColor: 'bg-safe' },
-  { name: 'Analytics', path: '/analytics', iconColor: 'bg-reach' }
-]
+const navItems = computed(() => [
+  { name: t('common.cases'), path: '/cases', iconColor: 'bg-primary' },
+  { name: t('common.students'), path: '/students', iconColor: 'bg-gray-300' },
+  { name: t('common.reviews'), path: '/queues', iconColor: 'bg-red-500', badge: queueStore.pendingCount },
+  { name: t('common.kb'), path: '/universities', iconColor: 'bg-safe' },
+  { name: t('common.analytics'), path: '/analytics', iconColor: 'bg-reach' }
+])
 
 const isActive = (path) => {
   if (path === '/cases' && route.path.startsWith('/cases')) return true
   return route.path === path
+}
+
+const toggleLanguage = () => {
+  locale.value = locale.value === 'en' ? 'vi' : 'en'
 }
 </script>
 
@@ -65,7 +71,13 @@ const isActive = (path) => {
 
       <div class="px-2 py-3 border-t border-black/10 shrink-0">
         <div class="flex items-center gap-2 px-2.5 py-2 text-[12px] text-text-muted cursor-pointer hover:bg-gray-50/50 rounded-lg mb-1">
-          <span class="w-[7px] h-[7px] rounded-full bg-gray-300"></span> Settings
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span class="flex-1">{{ $t('common.settings') }}</span>
+        </div>
+        <div @click="toggleLanguage" class="flex items-center gap-2 px-2.5 py-2 text-[12px] text-text-muted cursor-pointer hover:bg-gray-50/50 rounded-lg mb-4">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+          <span class="flex-1">{{ $t('common.language') }}</span>
+          <span class="text-[10px] font-bold uppercase bg-black/5 px-1.5 py-0.5 rounded">{{ locale }}</span>
         </div>
         <div class="flex items-center gap-2.5 px-2.5 py-2">
           <div class="w-8 h-8 rounded-full bg-secondary text-primary font-medium text-xs flex items-center justify-center shrink-0">
@@ -92,14 +104,15 @@ const isActive = (path) => {
             <span class="w-1.5 h-1.5 rounded-full bg-safe animate-pulse"></span>
             TinyFish syncing {{ queueStore.syncCount }} universities
           </div>
+
           <button class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium border border-black/15 hover:bg-gray-50 transition-colors whitespace-nowrap">
-            Export
+            {{ $t('common.export') }}
           </button>
           <button 
             @click="router.push('/cases/new')"
             class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium border border-primary bg-primary text-white hover:bg-primary-hover transition-colors whitespace-nowrap"
           >
-            + New case
+            {{ $t('common.newCase') }}
           </button>
         </div>
       </header>
