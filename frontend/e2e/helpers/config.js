@@ -6,9 +6,9 @@ export function getE2EConfig() {
     mode: process.env.E2E_MODE || 'deterministic',
     stack: process.env.E2E_STACK || 'auto',
     adminUsername: process.env.E2E_ADMIN_USERNAME || 'admin',
-    adminPassword: process.env.E2E_ADMIN_PASSWORD || 'admin123',
+    adminPassword: process.env.E2E_ADMIN_PASSWORD || 'admin@123',
     teacherUsername: process.env.E2E_TEACHER_USERNAME || 'teacher.e2e@unimatch.com',
-    teacherPassword: process.env.E2E_TEACHER_PASSWORD || 'teacher123',
+    teacherPassword: process.env.E2E_TEACHER_PASSWORD || 'teacher@123',
   };
 }
 
