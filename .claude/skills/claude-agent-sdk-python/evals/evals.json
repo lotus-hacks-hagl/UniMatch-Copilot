@@ -1,0 +1,35 @@
+{
+  "skill_name": "claude-agent-sdk-python",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Trong repo này, hãy viết một worker Python mới dùng `claude_agent_sdk.query()` để chạy một tác vụ nghiên cứu ngắn, trả kết quả bằng structured output Pydantic, và giải thích vì sao chọn `query()` thay vì `ClaudeSDKClient`.",
+      "expected_output": "Chọn đúng `query()` cho worker một-lần-một-job, tạo `ClaudeAgentOptions` với `output_format`, xử lý `ResultMessage.structured_output`, và không nhầm lẫn về luồng async.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Viết ví dụ Python dùng `ClaudeSDKClient` và một custom tool nội bộ tạo bằng `@tool` + `create_sdk_mcp_server` để Claude có thể gọi tool `lookup_university` khi cần.",
+      "expected_output": "Dùng đúng `ClaudeSDKClient`, khai báo tool đúng mẫu SDK, mount tool qua `mcp_servers`, và pre-approve tool bằng tên `mcp__...` chính xác.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Hook Python của tôi dùng `matcher='.env'` nhưng không bao giờ chặn được việc agent ghi vào file secrets, và đôi khi tool MCP nội bộ cũng không chạy dù tôi đã cấu hình options. Hãy debug nguyên nhân và sửa mẫu code cho đúng theo Claude Agent SDK Python.",
+      "expected_output": "Giải thích đúng rằng hook matcher match theo tên tool chứ không theo file path, chuyển logic kiểm tra `.env` vào callback, nêu rõ `allowed_tools` chỉ là auto-approval chứ không phải hard allowlist, và đề xuất chiến lược permission phù hợp cho SDK/MCP tools.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Tôi muốn xây một agent Python nhiều bước: lần 1 phân tích codebase, lần 2 tiếp tục từ đúng session cũ để sửa lỗi, thỉnh thoảng fork sang hướng khác để thử giải pháp B, và có một subagent chuyên review security. Hãy đề xuất design đúng với Claude Agent SDK Python và nêu các bẫy dễ sai.",
+      "expected_output": "Phân biệt rõ `ClaudeSDKClient` với `query()+resume`, nêu đúng `session_id`, `resume`, `fork_session`, giải thích subagents cần `Agent` tool ở parent, subagent không kế thừa full parent history, và cảnh báo các lỗi như `cwd` mismatch hoặc nhầm branch history với filesystem state.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Hãy viết hướng dẫn Python cho một agent dùng structured output + MCP + file checkpointing: agent truy vấn dữ liệu qua MCP, trả kết quả theo Pydantic schema, và nếu chỉnh file sai thì có thể `rewind_files()` về checkpoint trước đó.",
+      "expected_output": "Bao gồm `output_format` với `.model_json_schema()`, xử lý `ResultMessage.structured_output`, nhắc đúng naming/permissions cho MCP tools, nêu requirement `enable_file_checkpointing=True` và `extra_args={\"replay-user-messages\": None}`, cộng với flow resume + empty prompt trước khi `rewind_files()`.",
+      "files": []
+    }
+  ]
+}

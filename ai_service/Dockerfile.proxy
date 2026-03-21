@@ -1,0 +1,14 @@
+FROM ghcr.io/teremterem/claude-code-gpt-5:latest
+
+RUN python - <<'PY'
+from pathlib import Path
+
+path = Path('/app/common/utils.py')
+text = path.read_text(encoding='utf-8')
+old = '_UNSUPPORTED_RESPONSES_PARAMS = {"stream_options"}'
+new = '_UNSUPPORTED_RESPONSES_PARAMS = {"stream_options", "output_config"}'
+if old not in text:
+    raise SystemExit(f'Expected marker not found in {path}')
+path.write_text(text.replace(old, new, 1), encoding='utf-8')
+print('Patched', path)
+PY
