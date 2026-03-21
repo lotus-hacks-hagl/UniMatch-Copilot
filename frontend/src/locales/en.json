@@ -12,6 +12,20 @@
     "export": "Export",
     "newCase": "New case"
   },
+  "nav": {
+    "cases": "Case overview",
+    "students": "All students",
+    "adminTeachers": "Teacher Management",
+    "reviewQueue": "Review Queue",
+    "universities": "University KB",
+    "analytics": "Analytics",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "newCase": "New Case",
+    "caseDetail": "Case Detail",
+    "export": "Export",
+    "syncing": "Syncing {count} universities"
+  },
   "caseDetail": {
     "loading": "Loading case details...",
     "student": "Student",

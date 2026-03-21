@@ -12,6 +12,20 @@
     "export": "Xuất dữ liệu",
     "newCase": "Tạo hồ sơ"
   },
+  "nav": {
+    "cases": "Tổng quan hồ sơ",
+    "students": "Tất cả sinh viên",
+    "adminTeachers": "Quản lý Giáo Viên",
+    "reviewQueue": "Hàng chờ xét duyệt",
+    "universities": "Cơ sở dữ liệu ĐH",
+    "analytics": "Phân tích",
+    "language": "Ngôn ngữ",
+    "signOut": "Đăng xuất",
+    "newCase": "Tạo Hồ sơ",
+    "caseDetail": "Chi tiết Hồ sơ",
+    "export": "Xuất dữ liệu",
+    "syncing": "Đang đồng bộ {count} ĐH"
+  },
   "caseDetail": {
     "loading": "Đang tải chi tiết hồ sơ...",
     "student": "Sinh viên",

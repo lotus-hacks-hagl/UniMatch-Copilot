@@ -1,10 +1,15 @@
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useCasesStore } from '../stores/casesStore'
 import { useAuthStore } from '../stores/authStore'
 import { useI18n } from 'vue-i18n'
+
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement, Filler } from 'chart.js'
+import { Bar, Doughnut, Line } from 'vue-chartjs'
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, LineElement, PointElement, Filler)
 
 const router = useRouter()
 const casesStore = useCasesStore()
@@ -75,201 +80,232 @@ const formatConfidence = (val) => {
   return Math.round((val || 0) * 100)
 }
 
-const formatRelativeTime = (dateStr) => {
-  if (!dateStr) return t('cases.unknown')
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}${t('cases.m')} ${t('cases.ago')}`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}${t('cases.h')} ${t('cases.ago')}`
-  return `${Math.floor(hrs / 24)}${t('cases.d')} ${t('cases.ago')}`
+// Chart configurations
+const barChartData = {
+  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  datasets: [{
+    label: 'Cases',
+    backgroundColor: '#a32d2d',
+    borderRadius: 6,
+    data: [12, 19, 10, 25, 14, 20, 15]
+  }]
+}
+
+const barChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: { 
+    x: { grid: { display: false } }, 
+    y: { grid: { borderDash: [4, 4] }, beginAtZero: true } 
+  }
+}
+
+const donutChartData = {
+  labels: ['Safe', 'Match', 'Reach'],
+  datasets: [{
+    backgroundColor: ['#66bb6a', '#f57f17', '#e0e0e0'],
+    data: [45, 30, 25],
+    borderWidth: 0,
+    hoverOffset: 6
+  }]
+}
+
+const donutChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '75%',
+  plugins: { 
+    legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } } 
+  }
+}
+
+const lineChartData = {
+  labels: ['W1', 'W2', 'W3', 'W4', 'W5'],
+  datasets: [{
+    label: 'Escalation %',
+    borderColor: '#a32d2d',
+    backgroundColor: 'rgba(163, 45, 45, 0.1)',
+    data: [15, 12, 18, 14, 20],
+    fill: true,
+    tension: 0.4
+  }]
+}
+
+const lineChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: { 
+    x: { grid: { display: false } }, 
+    y: { grid: { borderDash: [4, 4] }, beginAtZero: true, max: 25 } 
+  }
 }
 </script>
 
 <template>
-  <div class="px-7 py-6 max-w-[1400px] mx-auto space-y-6">
+  <div class="px-8 py-6 w-full max-w-[1600px] mx-auto space-y-8 font-sans">
     
-    <!-- Metrics Row -->
-    <div class="grid grid-cols-4 gap-4">
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
-        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">{{ $t('cases.casesToday') }}</div>
-        <div class="text-2xl font-bold text-text mb-1">{{ stats.casesToday || 0 }}</div>
+    <!-- TOP KPIs ROW (Always Visible) -->
+    <div class="grid grid-cols-4 gap-5">
+      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
+        <div class="text-[14px] font-medium text-[#18180f] mb-3">{{ $t('cases.casesToday') }}</div>
+        <div class="text-[36px] font-bold text-[#18180f] leading-none text-transparent bg-clip-text bg-gradient-to-r from-[#ce3e3e] to-[#a32d2d]">{{ stats.casesToday || 0 }}</div>
       </div>
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
-        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">{{ $t('cases.avgProcessing') }}</div>
-        <div class="text-2xl font-bold text-text mb-1">{{ stats.avgProcessingTime || '0m' }}</div>
+      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
+        <div class="text-[14px] font-medium text-[#18180f] mb-3">{{ $t('cases.avgProcessing') }}</div>
+        <div class="text-[36px] font-bold text-[#18180f] leading-none">{{ stats.avgProcessingTime || '0m' }}</div>
       </div>
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
-        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">
+      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden">
+        <div class="text-[14px] font-medium text-[#18180f] mb-3 flex items-center justify-between relative z-10">
           {{ $t('cases.awaitingReview') }}
-          <span v-if="stats.awaitingReview > 0" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          <span v-if="stats.awaitingReview > 0" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
         </div>
-        <div class="text-2xl font-bold text-text mb-1">{{ stats.awaitingReview || 0 }}</div>
+        <div class="text-[36px] font-bold text-[#18180f] leading-none relative z-10">{{ stats.awaitingReview || 0 }}</div>
+        <!-- subtle danger bg if high -->
+        <div v-if="stats.awaitingReview > 0" class="absolute right-0 bottom-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl -mr-10 -mb-10 pointer-events-none"></div>
       </div>
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm relative overflow-hidden group">
-        <div class="absolute inset-y-0 left-0 w-1 bg-primary/0 group-hover:bg-primary transition-colors"></div>
-        <div class="text-[13px] text-text-muted mb-1 flex items-center justify-between">{{ $t('cases.aiConfidence') }}</div>
-        <div class="text-2xl font-bold text-text mb-1">{{ formatConfidence(stats.aiConfidenceAvg) }}%</div>
+      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
+        <div class="text-[14px] font-medium text-[#18180f] mb-3">{{ $t('cases.aiConfidence') }}</div>
+        <div class="text-[36px] font-bold text-[#18180f] leading-none flex items-end gap-2">
+          {{ formatConfidence(stats.aiConfidenceAvg) }}%
+          <svg v-if="formatConfidence(stats.aiConfidenceAvg) >= 80" class="w-6 h-6 text-[#2e7d32] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+        </div>
       </div>
     </div>
 
-    <!-- Main Table Section -->
-    <div class="bg-surface rounded-xl border border-black/5 shadow-sm overflow-hidden flex flex-col">
-      <!-- Tabs & Actions -->
-      <div class="border-b border-black/5 px-5 flex items-center justify-between">
-        <div class="flex items-center gap-6">
-          <button 
-            v-for="f in filters" 
-            :key="f"
-            @click="changeFilter(f)"
-            class="py-3.5 text-[13px] font-medium border-b-2 transition-colors"
-            :class="activeFilter === f ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'"
-          >
-            {{ $t('cases.filters.' + f) }}
-          </button>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="relative">
-            <input type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-8 pr-3 py-1.5 text-[13px] bg-bg border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-lg w-[200px]" />
-            <svg class="w-4 h-4 text-text-muted absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </div>
-          <button class="p-1.5 rounded text-text-muted border border-black/10 hover:bg-bg transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-          </button>
-        </div>
+    <!-- TABS ROW -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.02)] border border-black/5">
+        <button 
+          v-for="f in filters" 
+          :key="f"
+          @click="changeFilter(f)"
+          class="px-5 py-2 text-[14px] font-bold rounded-lg transition-all duration-300"
+          :class="activeFilter === f ? 'bg-[#a32d2d] shadow-sm text-white' : 'text-[#6b6a62] hover:text-[#18180f] hover:bg-black/5'"
+        >
+          {{ $t('cases.filters.' + f) }}
+        </button>
       </div>
+      <div class="flex items-center gap-3">
+        <div class="relative shadow-sm rounded-lg">
+          <input type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-10 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-xl w-[280px] transition-all" />
+          <svg class="w-4 h-4 text-[#a8a79d] absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <button class="p-2.5 bg-white rounded-xl text-[#6b6a62] border border-black/10 shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-all outline-none focus:ring-2 focus:ring-[#a32d2d]/10">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+        </button>
+      </div>
+    </div>
 
-      <!-- Table -->
-      <div class="overflow-x-auto min-h-[300px]">
-        <div v-if="casesStore.loading" class="flex items-center justify-center h-[300px] text-text-muted">{{ $t('cases.loading') }}</div>
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="flex flex-col xl:flex-row gap-6">
+      
+      <!-- DATA TABLE AREA -->
+      <div class="flex-1 bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] overflow-hidden min-h-[460px] flex flex-col">
+        <div v-if="casesStore.loading" class="flex items-center justify-center flex-1 text-[#6b6a62] p-12">
+          <div class="w-8 h-8 border-4 border-red-100 border-t-[#a32d2d] rounded-full animate-spin"></div>
+        </div>
+        
         <table v-else-if="cases.length > 0" class="w-full text-left border-collapse">
           <thead>
-            <tr class="text-[11px] text-text-muted uppercase tracking-wider border-b border-black/5">
-              <th class="px-5 py-3 font-medium">{{ $t('cases.table.student') }}</th>
-              <th class="px-5 py-3 font-medium">{{ $t('cases.table.profile') }}</th>
-              <th class="px-5 py-3 font-medium">{{ $t('cases.table.target') }}</th>
-              <th class="px-5 py-3 font-medium">{{ $t('cases.table.aiMatch') }}</th>
-              <th class="px-5 py-3 font-medium cursor-pointer flex items-center gap-1 hover:text-text hover:underline decoration-primary/20 underline-offset-4">{{ $t('cases.table.confidence') }} <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></th>
-              <th class="px-5 py-3 font-medium">{{ $t('cases.table.status') }}</th>
-              <th class="px-5 py-3 font-medium">Assignee</th>
+            <tr class="text-[12px] text-[#8a8980] uppercase tracking-wider border-b border-black/5 bg-[#fafafa]">
+              <th class="px-6 py-4 font-bold">{{ $t('cases.table.student') }}</th>
+              <th class="px-6 py-4 font-bold">{{ $t('cases.table.target') }}</th>
+              <th class="px-6 py-4 font-bold">{{ $t('cases.table.aiMatch') }}</th>
+              <th class="px-6 py-4 font-bold">{{ $t('cases.table.confidence') }}</th>
+              <th class="px-6 py-4 font-bold">{{ $t('cases.table.status') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-black/5 text-[13px]">
+          <tbody class="divide-y divide-black/5 text-[14px]">
             <tr 
               v-for="c in cases" 
               :key="c.id"
               @click="router.push('/cases/' + c.id)"
-              class="hover:bg-bg/50 transition-colors group cursor-pointer"
+              class="hover:bg-gray-50 transition-colors group cursor-pointer"
             >
-              <td class="px-5 py-3">
+              <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full bg-secondary text-primary font-medium flex items-center justify-center shrink-0 border border-primary/10">
+                  <div class="w-9 h-9 rounded-full bg-[#f4f5f7] text-[#18180f] font-bold flex items-center justify-center shrink-0 border border-black/5">
                     {{ getAvatar(c.student?.full_name) }}
                   </div>
                   <div>
-                    <div class="font-medium text-text group-hover:text-primary transition-colors">{{ c.student?.full_name }}</div>
-                    <div class="text-[11px] text-text-muted mt-0.5" v-if="c.student">GPA {{ c.student.gpa_normalized }} • IELTS {{ c.student.ielts_overall }}</div>
+                    <div class="font-bold text-[#18180f] group-hover:text-[#a32d2d] transition-colors">{{ c.student?.full_name }}</div>
+                    <div class="text-[12px] text-[#6b6a62] mt-0.5" v-if="c.student">GPA {{ c.student.gpa_normalized }} • IELTS {{ c.student.ielts_overall }}</div>
                   </div>
-                </div>
-              </td>
-              <td class="px-5 py-3">
-                <div class="text-text">{{ c.student?.intended_major }}</div>
-                <div class="text-[11px] text-text-muted mt-0.5">{{ (c.student?.preferred_countries || []).join(', ') }} • {{ formatBudget(c.student?.budget_usd_per_year) }}</div>
-              </td>
-              <td class="px-5 py-3">
-                <div class="text-text">{{ c.student?.target_intake }}</div>
-                <div class="text-[11px] text-text-muted mt-0.5">Bachelor</div>
-              </td>
-              <td class="px-5 py-3">
-                <div class="flex gap-1.5" v-if="c.recommendations">
-                  <span v-if="getTiers(c.recommendations).safe > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-safe/10 text-safe border border-safe/20">{{ getTiers(c.recommendations).safe }} {{ $t('cases.tiers.safe') }}</span>
-                  <span v-if="getTiers(c.recommendations).match > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-match/10 text-match border border-match/20">{{ getTiers(c.recommendations).match }} {{ $t('cases.tiers.match') }}</span>
-                  <span v-if="getTiers(c.recommendations).reach > 0" class="px-2 py-0.5 rounded text-[10px] font-medium bg-reach/10 text-reach border border-reach/20">{{ getTiers(c.recommendations).reach }} {{ $t('cases.tiers.reach') }}</span>
-                </div>
-                <div v-else class="text-text-muted text-[11px]">{{ $t('cases.pendingAi') }}</div>
-              </td>
-              <td class="px-5 py-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      class="h-full rounded-full" 
-                      :class="formatConfidence(c.ai_confidence) >= 90 ? 'bg-safe' : (formatConfidence(c.ai_confidence) >= 80 ? 'bg-match' : 'bg-reach')"
-                      :style="{ width: Math.max(5, formatConfidence(c.ai_confidence)) + '%' }"
-                    ></div>
-                  </div>
-                  <span class="text-[11px] font-medium" :class="formatConfidence(c.ai_confidence) >= 90 ? 'text-safe' : (formatConfidence(c.ai_confidence) >= 80 ? 'text-match' : 'text-reach')">{{ formatConfidence(c.ai_confidence) }}%</span>
-                </div>
-              </td>
-              <td class="px-5 py-3">
-                <div class="flex items-center justify-between">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium border" :class="getStatusClass(c.status)">
-                    {{ getStatusLabel(c.status) }}
-                  </span>
                 </div>
               </td>
               <td class="px-6 py-4">
-                <div v-if="c.assigned_to" class="flex items-center text-xs text-[#6b6a62]">
-                  <div class="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center mr-2 text-[10px] font-bold">
-                    {{ c.assigned_to.username.charAt(0).toUpperCase() }}
-                  </div>
-                  {{ c.assigned_to.username }}
+                <div class="text-[#18180f] font-bold">{{ c.student?.intended_major }}</div>
+                <div class="text-[12px] text-[#6b6a62] mt-0.5">{{ c.student?.target_intake }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex gap-2" v-if="c.recommendations">
+                  <span v-if="getTiers(c.recommendations).safe > 0" class="px-2.5 py-1 rounded text-[11px] font-bold bg-[#e8f5e9] text-[#2e7d32]">{{ getTiers(c.recommendations).safe }} {{ $t('cases.tiers.safe') }}</span>
+                  <span v-else-if="getTiers(c.recommendations).reach > 0" class="px-2.5 py-1 rounded text-[11px] font-bold bg-red-50 text-[#a32d2d]">{{ getTiers(c.recommendations).reach }} {{ $t('cases.tiers.reach') }}</span>
                 </div>
-                <button 
-                  v-else-if="!authStore.isAdmin"
-                  @click="handleClaim($event, c.id)"
-                  class="bg-[#a32d2d] text-white px-3 py-1 rounded text-[11px] font-bold hover:bg-[#821419] transition-colors"
-                >
-                  Claim
-                </button>
-                <span v-else class="text-[11px] text-[#6b6a62] italic">Pool</span>
+                <div v-else class="text-[#8a8980] text-[12px] italic">{{ $t('cases.pendingAi') }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-[13px] font-bold" :class="formatConfidence(c.ai_confidence) >= 90 ? 'text-[#2e7d32]' : (formatConfidence(c.ai_confidence) >= 80 ? 'text-[#f57f17]' : 'text-[#a32d2d]')">{{ formatConfidence(c.ai_confidence) }}%</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold" :class="getStatusClass(c.status)">
+                  {{ getStatusLabel(c.status) }}
+                </span>
+                <div class="text-[11px] text-[#8a8980] mt-1">{{ formatRelativeTime(c.created_at) }}</div>
               </td>
             </tr>
           </tbody>
         </table>
-        <div v-else class="flex flex-col items-center justify-center p-12 h-[300px] bg-surface rounded-lg border-2 border-dashed border-black/10 mx-5 my-5">
-          <svg class="w-10 h-10 text-black/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-          <p class="text-[13px] text-text-muted">{{ $t('cases.noCases') }}</p>
+        
+        <!-- Smart Empty State contained IN the table card -->
+        <div v-else class="flex flex-col items-center justify-center flex-1 p-16 text-center bg-[#fafafa] border border-black/5 mx-8 my-8 rounded-3xl shrink-0">
+          <div class="relative mb-5 text-[#a32d2d] bg-red-50 p-6 rounded-full">
+            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#18180f] mb-1">{{ $t('cases.noCases') }}</h3>
+          <p class="text-[14px] text-[#6b6a62] max-w-sm mx-auto">{{ $t('cases.analytics.noCasesSub') || 'Try adjusting your filters or search terms to find what you are looking for.' }}</p>
+          <button @click="router.push('/cases/new')" class="mt-6 px-6 py-3 bg-[#a32d2d] text-white rounded-xl text-[14px] font-bold shadow-[0_4px_14px_rgba(163,45,45,0.35)] hover:shadow-[0_6px_20px_rgba(163,45,45,0.5)] hover:-translate-y-0.5 transition-all">
+            {{ $t('common.newCase') }}
+          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Analytics Row -->
-    <div class="grid grid-cols-3 gap-4">
-      <!-- Empty charts placeholder to preserve UI layout -->
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
-        <div class="text-[13px] text-text-muted mb-4 font-medium">{{ $t('cases.charts.casesPerDay') }}</div>
-        <div class="h-24 flex items-end gap-2 justify-between">
-          <div class="w-full bg-primary/20 hover:bg-primary transition-colors rounded-t" style="height: 40%"></div>
-          <div class="w-full bg-primary/20 hover:bg-primary transition-colors rounded-t" style="height: 60%"></div>
-          <div class="w-full bg-primary/40 hover:bg-primary transition-colors rounded-t" style="height: 30%"></div>
-          <div class="w-full bg-primary/80 hover:bg-primary transition-colors rounded-t" style="height: 90%"></div>
-          <div class="w-full bg-primary hover:bg-primary transition-colors rounded-t" style="height: 100%"></div>
-          <div class="w-full bg-primary/60 hover:bg-primary transition-colors rounded-t" style="height: 70%"></div>
-          <div class="w-full bg-primary/40 hover:bg-primary transition-colors rounded-t" style="height: 50%"></div>
-        </div>
-      </div>
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
-        <div class="text-[13px] text-text-muted mb-4 font-medium flex justify-between">{{ $t('cases.charts.matchTierDist') }} <span class="text-safe">{{ $t('cases.tiers.safe') }}</span></div>
-        <div class="h-24 flex items-center justify-center relative">
-          <!-- Fake Donut -->
-          <div class="w-20 h-20 rounded-full border-4 border-t-safe border-r-match border-b-reach border-l-gray-100 flex items-center justify-center">
-             <span class="text-lg font-bold text-text">...</span>
+      <!-- CHARTS SIDEBAR -->
+      <div class="w-full xl:w-[420px] shrink-0 space-y-6 flex flex-col justify-start">
+        
+        <!-- Cases per day Chart -->
+        <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+          <div class="text-[15px] font-bold text-[#18180f] mb-4">{{ $t('cases.charts.casesPerDay') }}</div>
+          <div class="h-[180px] w-full">
+            <Bar :data="barChartData" :options="barChartOptions" />
           </div>
         </div>
-      </div>
-      <div class="bg-surface rounded-xl p-5 border border-black/5 shadow-sm">
-        <div class="text-[13px] text-text-muted mb-4 font-medium">{{ $t('cases.charts.escalationRate') }}</div>
-        <div class="h-24 relative overflow-hidden">
-           <svg viewBox="0 0 100 40" class="w-full h-full preserve-aspect-ratio cursor-pointer group">
-             <path d="M0,35 Q10,30 20,32 T40,20 T60,25 T80,10 T100,5" fill="none" class="stroke-reach opacity-50 group-hover:opacity-100 transition-opacity" stroke-width="2" stroke-linecap="round"/>
-             <circle cx="100" cy="5" r="2" class="fill-reach" />
-             <path d="M0,40 L0,35 Q10,30 20,32 T40,20 T60,25 T80,10 T100,5 L100,40 Z" class="fill-reach/10" />
-           </svg>
+        
+        <!-- Match Tier Distribution Chart -->
+        <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+          <div class="text-[15px] font-bold text-[#18180f] mb-2">{{ $t('cases.charts.matchTierDist') }}</div>
+          <!-- Absolute centered total counter -->
+          <div class="relative h-[180px] w-full flex items-center justify-center">
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-2 pr-16 text-center">
+              <span class="text-[28px] font-black text-[#18180f] leading-none">100</span>
+              <span class="text-[11px] font-bold text-[#8a8980] uppercase tracking-wider">Total</span>
+            </div>
+            <Doughnut :data="donutChartData" :options="donutChartOptions" />
+          </div>
         </div>
+        
+        <!-- Escalation Rate Trend Chart -->
+        <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+          <div class="text-[15px] font-bold text-[#18180f] mb-4">{{ $t('cases.charts.escalationRate') }}</div>
+          <div class="h-[140px] w-full">
+            <Line :data="lineChartData" :options="lineChartOptions" />
+          </div>
+        </div>
+
       </div>
+
     </div>
   </div>
 </template>
