@@ -1,0 +1,348 @@
+basePath: /
+definitions:
+  dto.AnalyzeInput:
+    properties:
+      achievements:
+        type: string
+      budget_usd_per_year:
+        type: integer
+      candidate_universities:
+        items:
+          $ref: '#/definitions/dto.CandidateUniversity'
+        type: array
+      extracurriculars:
+        type: string
+      full_name:
+        type: string
+      gpa_normalized:
+        type: number
+      ielts_overall:
+        type: number
+      intended_major:
+        type: string
+      preferred_countries:
+        items:
+          type: string
+        type: array
+      sat_total:
+        type: integer
+      scholarship_required:
+        type: boolean
+      target_intake:
+        type: string
+      toefl_total:
+        type: integer
+    type: object
+  dto.AnalyzeJobRequest:
+    properties:
+      callback_url:
+        type: string
+      case_id:
+        type: string
+      input:
+        $ref: '#/definitions/dto.AnalyzeInput'
+      job_id:
+        type: string
+    required:
+    - callback_url
+    - case_id
+    - input
+    - job_id
+    type: object
+  dto.CandidateUniversity:
+    properties:
+      acceptance_rate:
+        type: number
+      available_majors:
+        items:
+          type: string
+        type: array
+      country:
+        type: string
+      gpa_expectation_normalized:
+        type: number
+      ielts_min:
+        type: number
+      qs_rank:
+        type: integer
+      sat_required:
+        type: boolean
+      scholarship_available:
+        type: boolean
+      tuition_usd_per_year:
+        type: integer
+      university_id:
+        type: string
+      university_name:
+        type: string
+    type: object
+  dto.CrawlJobRequest:
+    properties:
+      callback_url:
+        type: string
+      job_id:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      university_id:
+        type: string
+    required:
+    - callback_url
+    - job_id
+    - university_id
+    type: object
+  dto.JobAcceptedResponse:
+    properties:
+      job_id:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  dto.JobDebugResponse:
+    properties:
+      callback_attempts:
+        type: integer
+      callback_status:
+        type: string
+      job_id:
+        type: string
+      job_type:
+        type: string
+      last_error:
+        type: string
+      openai_attempts:
+        type: integer
+      openai_fill_used:
+        type: boolean
+      search_attempts:
+        items:
+          $ref: '#/definitions/dto.SearchAttempt'
+        type: array
+      status:
+        type: string
+      tinyfish_fetches:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    type: object
+  dto.RecommendationResult:
+    properties:
+      admission_likelihood_score:
+        type: integer
+      improvements:
+        items:
+          type: string
+        type: array
+      rank_order:
+        type: integer
+      reason:
+        type: string
+      risks:
+        items:
+          type: string
+        type: array
+      student_fit_score:
+        type: integer
+      tier:
+        type: string
+      university_id:
+        type: string
+      university_name:
+        type: string
+    type: object
+  dto.ReportJobRequest:
+    properties:
+      callback_url:
+        type: string
+      case_id:
+        type: string
+      job_id:
+        type: string
+      recommendations:
+        items:
+          $ref: '#/definitions/dto.RecommendationResult'
+        type: array
+      student_name:
+        type: string
+    required:
+    - callback_url
+    - case_id
+    - job_id
+    type: object
+  dto.SearchAttempt:
+    properties:
+      error:
+        type: string
+      query:
+        type: string
+      result_count:
+        type: integer
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+      message:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      success:
+        type: boolean
+    type: object
+host: localhost:9000
+info:
+  contact: {}
+  description: Simple AI orchestration service for UniMatch using Exa and TinyFish
+    with heuristic fallback.
+  title: UniMatch AI Service API
+  version: "1.0"
+paths:
+  /jobs/{job_id}:
+    get:
+      description: Returns local in-memory debug state for a job. Intended for local
+        or test environments only.
+      parameters:
+      - description: Job ID
+        in: path
+        name: job_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.JobDebugResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get local job debug state
+      tags:
+      - jobs
+  /jobs/analyze:
+    post:
+      consumes:
+      - application/json
+      description: Accepts a student profile and candidate universities, then asynchronously
+        sends analyze results back to the backend callback URL.
+      parameters:
+      - description: Analyze request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AnalyzeJobRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.JobAcceptedResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Queue analyze job
+      tags:
+      - jobs
+  /jobs/crawl:
+    post:
+      consumes:
+      - application/json
+      description: Accepts a university crawl job and asynchronously posts crawl results
+        to the backend callback URL.
+      parameters:
+      - description: Crawl request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CrawlJobRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.JobAcceptedResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Queue crawl job
+      tags:
+      - jobs
+  /jobs/report:
+    post:
+      consumes:
+      - application/json
+      description: Accepts recommendations and asynchronously posts generated report
+        content to the backend callback URL.
+      parameters:
+      - description: Report request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReportJobRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.JobAcceptedResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Queue report job
+      tags:
+      - jobs
+swagger: "2.0"

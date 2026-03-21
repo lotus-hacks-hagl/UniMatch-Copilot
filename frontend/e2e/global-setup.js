@@ -1,23 +1,49 @@
-import { execSync } from 'child_process';
-import axios from 'axios';
+import { randomUUID } from 'crypto';
+import { ensureAdminAccount, ensureTeacherAccount, probeHealth } from './helpers/api.js';
+import { getE2EConfig, requireLiveProviderKeys } from './helpers/config.js';
+import { writeRunState } from './helpers/state.js';
 
-export default async function globalSetup(config) {
-  console.log('\n[Global Setup] Wiping Docker Postgres Test Entries...');
-  
+async function requireReachable(label, url) {
   try {
-    // Purge the database to ensure 100% test idempotency
-    execSync('docker exec unimatch_db psql -U postgres -d unimatch_be -c "DELETE FROM cases; DELETE FROM users;"', { stdio: 'inherit' });
-    console.log('[Global Setup] Database wiped successfully.');
-    
-    // Auto-provision test accounts via Direct API call
-    console.log('[Global Setup] Seeding test accounts...');
-    await axios.post('http://localhost:8080/api/v1/auth/register', {
-      username: 'e2e_admin',
-      password: 'testpassword123'
-    });
-    console.log('[Global Setup] Root test account configured.');
+    return await probeHealth(url);
   } catch (error) {
-    console.error('[Global Setup] Failed during infrastructure wipe or seed:', error.message);
-    throw error;
+    throw new Error(`${label} health check failed for ${url}: ${error.message}`);
   }
+}
+
+export default async function globalSetup() {
+  const cfg = getE2EConfig();
+  const runId = randomUUID().slice(0, 8);
+
+  console.log(`[E2E] Starting ${cfg.mode} suite on stack=${cfg.stack}, run=${runId}`);
+
+  if (cfg.mode === 'live') {
+    requireLiveProviderKeys();
+  }
+
+  await requireReachable('Backend', `${cfg.apiBaseURL.replace(/\/api\/v1$/, '')}/health`);
+  await requireReachable('AI service', `${cfg.aiBaseURL}/health`);
+
+  const adminAuth = await ensureAdminAccount(cfg.adminUsername, cfg.adminPassword);
+  const teacherState = await ensureTeacherAccount(adminAuth.token, cfg.teacherUsername, cfg.teacherPassword);
+
+  await writeRunState({
+    runId,
+    mode: cfg.mode,
+    stack: cfg.stack,
+    feBaseURL: cfg.feBaseURL,
+    apiBaseURL: cfg.apiBaseURL,
+    aiBaseURL: cfg.aiBaseURL,
+    admin: {
+      username: cfg.adminUsername,
+      password: cfg.adminPassword,
+    },
+    teacher: {
+      username: teacherState.username,
+      password: cfg.teacherPassword,
+      id: teacherState.teacher.id,
+    },
+  });
+
+  console.log(`[E2E] Prepared admin=${cfg.adminUsername} teacher=${teacherState.username}`);
 }

@@ -26,6 +26,7 @@ type UniversityService interface {
 	List(ctx context.Context, country, search string, page, limit int) ([]model.University, int64, *apperror.AppError)
 	CrawlAll(ctx context.Context) (int, *apperror.AppError)
 	CountActiveCrawls(ctx context.Context) (int64, *apperror.AppError)
+	HandleCrawlDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
 }
 
 type DashboardService interface {

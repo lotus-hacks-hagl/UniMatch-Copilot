@@ -20,7 +20,11 @@ const editedSummary = ref('')
 
 const tabs = computed(() => {
   const baseTabs = ['profile', 'aiAnalysis', 'documents', 'communication']
-  if (caseData.value && !authStore.isAdmin && caseData.value?.assigned_to_id === authStore.user?.id) {
+  const isAssignedToCurrentUser = caseData.value && (
+    caseData.value?.assigned_to_id === authStore.user?.id ||
+    caseData.value?.assigned_to?.username === authStore.user?.username
+  )
+  if (caseData.value && !authStore.isAdmin && isAssignedToCurrentUser) {
     return [...baseTabs, 'reportEditor']
   }
   return baseTabs
@@ -194,6 +198,7 @@ const generateReport = async () => {
               <div class="space-y-3 pt-5 border-t border-black/5">
                 <button v-if="!caseData.assigned_to_id && !authStore.isAdmin" 
                         @click="handleClaim" 
+                        data-testid="case-claim"
                         class="btn-primary w-full shadow-[0_4px_14px_rgba(163,45,45,0.35)]">
                   Claim this Case
                 </button>
@@ -202,7 +207,7 @@ const generateReport = async () => {
                   <span class="font-bold text-[#18180f]">Assigned to {{ caseData.assigned_to.username }}</span>
                 </div>
                 
-                <button @click="generateReport" class="btn-outline w-full hover:-translate-y-0.5">
+                <button @click="generateReport" data-testid="case-generate-report" class="btn-outline w-full hover:-translate-y-0.5">
                   <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                   {{ $t('caseDetail.generateReport') }}
                 </button>
@@ -214,13 +219,14 @@ const generateReport = async () => {
           <div class="flex-1 w-full card-soft p-0 min-h-[600px] flex flex-col">
             
             <div class="flex border-b border-black/5 px-6 pt-2 overflow-x-auto">
-              <button 
-                v-for="t in tabs" 
-                :key="t"
-                @click="activeTab = t"
-                class="px-5 py-4 text-[14px] font-bold border-b-[3px] transition-colors whitespace-nowrap"
-                :class="activeTab === t ? 'border-[#a32d2d] text-[#a32d2d]' : 'border-transparent text-[#6b6a62] hover:text-[#18180f]'"
-              >
+                <button 
+                  v-for="t in tabs" 
+                  :key="t"
+                  @click="activeTab = t"
+                  :data-testid="`case-tab-${t}`"
+                  class="px-5 py-4 text-[14px] font-bold border-b-[3px] transition-colors whitespace-nowrap"
+                  :class="activeTab === t ? 'border-[#a32d2d] text-[#a32d2d]' : 'border-transparent text-[#6b6a62] hover:text-[#18180f]'"
+                >
                 {{ $t('caseDetail.tabs.' + t) }}
               </button>
             </div>
@@ -298,7 +304,7 @@ const generateReport = async () => {
                   <div class="bg-white rounded-[20px] p-8 border border-black/5 shadow-sm h-full flex flex-col">
                     <div class="flex items-center justify-between mb-4">
                       <h3 class="text-lg font-bold text-[#18180f]">Refine AI Summary</h3>
-                      <button @click="updateReport" class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]">
+                      <button @click="updateReport" data-testid="case-save-report-summary" class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]">
                         Save Changes
                       </button>
                     </div>
@@ -307,6 +313,7 @@ const generateReport = async () => {
                     </p>
                     <textarea 
                       v-model="editedSummary"
+                      data-testid="case-report-summary"
                       class="flex-1 w-full min-h-[400px] p-5 text-[14px] bg-[#fafafa] rounded-xl border border-black/5 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 focus:bg-white outline-none transition-all leading-relaxed resize-y"
                     ></textarea>
                   </div>

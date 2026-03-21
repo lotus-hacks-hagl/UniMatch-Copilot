@@ -37,27 +37,27 @@ func main() {
 	// 4. Repositories
 	userRepo := repository.NewUserRepository(db)
 	caseRepo := repository.NewCaseRepository(db)
-	uniRepo  := repository.NewUniversityRepository(db)
-	actRepo  := repository.NewActivityRepository(db)
+	uniRepo := repository.NewUniversityRepository(db)
+	actRepo := repository.NewActivityRepository(db)
 	dashRepo := repository.NewDashboardRepository(db)
 	studentRepo := repository.NewStudentRepository(db)
 
 	// 5. Services
 	authSvc := service.NewAuthService(userRepo, cfg)
-	caseSvc := service.NewCaseService(db, caseRepo, actRepo, aiClient, cfg)
-	uniSvc  := service.NewUniversityService(db, uniRepo, actRepo, aiClient, cfg)
+	caseSvc := service.NewCaseService(db, caseRepo, uniRepo, actRepo, aiClient, cfg)
+	uniSvc := service.NewUniversityService(db, uniRepo, actRepo, aiClient, cfg)
 	dashSvc := service.NewDashboardService(dashRepo, actRepo)
 	adminSvc := service.NewAdminService(userRepo)
 	studentSvc := service.NewStudentService(studentRepo)
 
 	// 6. Handlers
-	authH     := handler.NewAuthHandler(authSvc)
-	casesH    := handler.NewCasesHandler(caseSvc)
-	uniH      := handler.NewUniversitiesHandler(uniSvc)
-	dashH     := handler.NewDashboardHandler(dashSvc)
+	authH := handler.NewAuthHandler(authSvc)
+	casesH := handler.NewCasesHandler(caseSvc)
+	uniH := handler.NewUniversitiesHandler(uniSvc)
+	dashH := handler.NewDashboardHandler(dashSvc)
 	internalH := handler.NewInternalHandler(caseSvc, uniSvc)
-	adminH    := handler.NewAdminHandler(adminSvc)
-	studentH  := handler.NewStudentHandler(studentSvc)
+	adminH := handler.NewAdminHandler(adminSvc)
+	studentH := handler.NewStudentHandler(studentSvc)
 
 	// 7. Router
 	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH, adminH, studentH)

@@ -37,18 +37,33 @@ type AnalyzeJobRequest struct {
 }
 
 type AnalyzeInput struct {
-	FullName            string   `json:"full_name"`
-	GpaNormalized       float64  `json:"gpa_normalized"`
-	IeltsOverall        *float64 `json:"ielts_overall"`
-	SatTotal            *int     `json:"sat_total"`
-	ToeflTotal          *int     `json:"toefl_total"`
-	IntendedMajor       string   `json:"intended_major"`
-	BudgetUsdPerYear    int      `json:"budget_usd_per_year"`
-	PreferredCountries  []string `json:"preferred_countries"`
-	TargetIntake        string   `json:"target_intake"`
-	ScholarshipRequired bool     `json:"scholarship_required"`
-	Extracurriculars    string   `json:"extracurriculars"`
-	Achievements        string   `json:"achievements"`
+	FullName              string                `json:"full_name"`
+	GpaNormalized         float64               `json:"gpa_normalized"`
+	IeltsOverall          *float64              `json:"ielts_overall"`
+	SatTotal              *int                  `json:"sat_total"`
+	ToeflTotal            *int                  `json:"toefl_total"`
+	IntendedMajor         string                `json:"intended_major"`
+	BudgetUsdPerYear      int                   `json:"budget_usd_per_year"`
+	PreferredCountries    []string              `json:"preferred_countries"`
+	TargetIntake          string                `json:"target_intake"`
+	ScholarshipRequired   bool                  `json:"scholarship_required"`
+	Extracurriculars      string                `json:"extracurriculars"`
+	Achievements          string                `json:"achievements"`
+	CandidateUniversities []CandidateUniversity `json:"candidate_universities"`
+}
+
+type CandidateUniversity struct {
+	UniversityID             string   `json:"university_id"`
+	UniversityName           string   `json:"university_name"`
+	Country                  string   `json:"country"`
+	QsRank                   *int     `json:"qs_rank"`
+	IeltsMin                 *float64 `json:"ielts_min"`
+	SatRequired              bool     `json:"sat_required"`
+	GpaExpectationNormalized *float64 `json:"gpa_expectation_normalized"`
+	TuitionUsdPerYear        *int     `json:"tuition_usd_per_year"`
+	ScholarshipAvailable     bool     `json:"scholarship_available"`
+	AvailableMajors          []string `json:"available_majors"`
+	AcceptanceRate           *float64 `json:"acceptance_rate"`
 }
 
 // ReportJobRequest matches shared contract with AI Service

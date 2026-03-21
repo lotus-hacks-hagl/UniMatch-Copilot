@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"unimatch-be/internal/model"
 
@@ -47,6 +48,41 @@ func (r *universityRepository) FindAll(ctx context.Context, country, search stri
 		Offset((page - 1) * limit).Limit(limit).
 		Find(&unis).Error
 	return unis, total, err
+}
+
+func (r *universityRepository) FindAnalyzeCandidates(ctx context.Context, countries []string, major string, budget int, limit int) ([]model.University, error) {
+	var unis []model.University
+
+	q := r.db.WithContext(ctx).Model(&model.University{})
+	if len(countries) > 0 {
+		q = q.Where("country IN ?", countries)
+	}
+	if major != "" {
+		q = q.Where("array_to_string(available_majors, ',') ILIKE ?", "%"+major+"%")
+	}
+	if budget > 0 {
+		q = q.Order("CASE WHEN tuition_usd_per_year IS NULL THEN 1 WHEN tuition_usd_per_year <= " +
+			fmt.Sprint(budget) + " THEN 0 ELSE 1 END ASC")
+	}
+
+	err := q.
+		Order("qs_rank ASC NULLS LAST").
+		Limit(limit).
+		Find(&unis).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if len(unis) > 0 || (len(countries) == 0 && major == "") {
+		return unis, nil
+	}
+
+	err = r.db.WithContext(ctx).
+		Model(&model.University{}).
+		Order("qs_rank ASC NULLS LAST").
+		Limit(limit).
+		Find(&unis).Error
+	return unis, err
 }
 
 func (r *universityRepository) FindCrawlable(ctx context.Context) ([]model.University, error) {

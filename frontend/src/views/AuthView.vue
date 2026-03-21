@@ -55,6 +55,7 @@
               v-model="form.username"
               type="text" 
               required
+              data-testid="auth-username"
               class="w-full px-4 py-3.5 bg-[#f4f5f7] border border-transparent rounded-xl focus:bg-white focus:border-[#a32d2d] focus:ring-4 focus:ring-[#a32d2d]/10 outline-none transition-all duration-300 text-[#18180f] placeholder-[#a8a79d]"
               :placeholder="$t('auth.username')"
             />
@@ -65,6 +66,7 @@
               v-model="form.password"
               type="password" 
               required
+              data-testid="auth-password"
               class="w-full px-4 py-3.5 bg-[#f4f5f7] border border-transparent rounded-xl focus:bg-white focus:border-[#a32d2d] focus:ring-4 focus:ring-[#a32d2d]/10 outline-none transition-all duration-300 text-[#18180f] placeholder-[#a8a79d]"
               placeholder="••••••••"
             />
@@ -89,6 +91,7 @@
           <button 
             type="submit"
             :disabled="loading"
+            data-testid="auth-submit"
             class="w-full py-4 mt-6 bg-gradient-to-r from-[#8B0000] to-[#b30000] text-white font-bold rounded-full shadow-[0_4px_14px_rgba(163,45,45,0.4)] hover:shadow-[0_6px_20px_rgba(163,45,45,0.6)] hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 flex justify-center items-center"
           >
             <span v-if="loading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>

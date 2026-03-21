@@ -114,13 +114,13 @@ const toggleCountry = (code) => {
         <div v-if="currentStep === 1" key="step1" class="space-y-6">
           <div>
             <label class="block text-[13px] font-bold text-[#18180f] mb-2">Full Name</label>
-            <input v-model="form.full_name" type="text" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="e.g. Nguyen Van A" />
+            <input v-model="form.full_name" data-testid="new-case-full-name" type="text" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="e.g. Nguyen Van A" />
           </div>
           <div class="grid grid-cols-2 gap-5">
             <div>
               <label class="block text-[13px] font-bold text-[#18180f] mb-2">GPA Raw</label>
               <div class="flex gap-2">
-                <input v-model="form.gpa_raw" type="number" step="0.1" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="3.8" />
+                <input v-model="form.gpa_raw" data-testid="new-case-gpa-raw" type="number" step="0.1" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="3.8" />
                 <select v-model="form.gpa_scale" class="w-28 px-3 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all font-medium">
                   <option value="4.0">/ 4.0</option>
                   <option value="10.0">/ 10</option>
@@ -130,11 +130,11 @@ const toggleCountry = (code) => {
             </div>
             <div>
               <label class="block text-[13px] font-bold text-[#18180f] mb-2">IELTS Score</label>
-              <input v-model="form.ielts_overall" type="number" step="0.5" max="9.0" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="7.5" />
+              <input v-model="form.ielts_overall" data-testid="new-case-ielts" type="number" step="0.5" max="9.0" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="7.5" />
             </div>
             <div class="col-span-2 md:col-span-1">
               <label class="block text-[13px] font-bold text-[#18180f] mb-2">SAT Total</label>
-              <input v-model="form.sat_total" type="number" step="10" min="400" max="1600" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="1450" />
+              <input v-model="form.sat_total" data-testid="new-case-sat" type="number" step="10" min="400" max="1600" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="1450" />
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ const toggleCountry = (code) => {
         <div v-else-if="currentStep === 2" key="step2" class="space-y-6">
           <div>
             <label class="block text-[13px] font-bold text-[#18180f] mb-2">Desired Major</label>
-            <select v-model="form.intended_major" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all font-medium">
+            <select v-model="form.intended_major" data-testid="new-case-major" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all font-medium">
               <option disabled value="">Select a major...</option>
               <option value="Computer Science">Computer Science</option>
               <option value="Business Administration">Business Administration</option>
@@ -170,7 +170,7 @@ const toggleCountry = (code) => {
           <div>
             <label class="block text-[13px] font-bold text-[#18180f] mb-2">Annual Budget (USD)</label>
             <div class="relative">
-              <input v-model="form.budget_usd_per_year" type="text" class="w-full pl-9 pr-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="e.g. 40,000" />
+              <input v-model="form.budget_usd_per_year" data-testid="new-case-budget" type="text" class="w-full pl-9 pr-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all placeholder-[#a8a79d]" placeholder="e.g. 40,000" />
               <span class="absolute left-4 top-3 text-[#a8a79d] font-bold text-[14px]">$</span>
             </div>
           </div>
@@ -180,7 +180,7 @@ const toggleCountry = (code) => {
         <div v-else-if="currentStep === 3" key="step3" class="space-y-6">
           <div>
             <label class="block text-[13px] font-bold text-[#18180f] mb-2">Target Intake Term</label>
-            <select v-model="form.target_intake" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all font-medium">
+            <select v-model="form.target_intake" data-testid="new-case-intake" class="w-full px-4 py-3 rounded-xl border border-black/10 text-[14px] outline-none focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] bg-[#fafafa] focus:bg-white transition-all font-medium">
               <option disabled value="">Select intake...</option>
               <option value="Fall 2026">Fall 2026</option>
               <option value="Spring 2027">Spring 2027</option>
@@ -215,6 +215,7 @@ const toggleCountry = (code) => {
         <button 
           v-if="currentStep < 3" 
           @click="nextStep"
+          data-testid="new-case-continue"
           class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)] shrink-0 w-28 flex justify-center"
         >
           Continue
@@ -224,6 +225,7 @@ const toggleCountry = (code) => {
           v-if="currentStep === 3" 
           @click="submitForm"
           :disabled="isSubmitting"
+          data-testid="new-case-submit"
           class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)] shrink-0 px-8 disabled:opacity-50"
         >
           {{ isSubmitting ? 'Creating Case...' : 'Submit & Analyze' }}

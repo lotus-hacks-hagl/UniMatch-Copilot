@@ -23,6 +23,7 @@ type UniversityRepository interface {
 	Create(ctx context.Context, u *model.University) error
 	FindByID(ctx context.Context, id uuid.UUID) (*model.University, error)
 	FindAll(ctx context.Context, country, search string, page, limit int) ([]model.University, int64, error)
+	FindAnalyzeCandidates(ctx context.Context, countries []string, major string, budget int, limit int) ([]model.University, error)
 	FindCrawlable(ctx context.Context) ([]model.University, error)
 	CountByCrawlStatus(ctx context.Context, status string) (int64, error)
 	UpdateCrawlResult(ctx context.Context, id uuid.UUID, fields map[string]interface{}) error

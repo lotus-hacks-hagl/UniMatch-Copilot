@@ -1,21 +1,28 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const feBaseURL = process.env.E2E_FE_BASE_URL || 'http://127.0.0.1:5173';
+const apiBaseURL = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:8080/api/v1';
+const url = new URL(feBaseURL);
+const isLocalFe = ['127.0.0.1', 'localhost'].includes(url.hostname);
+const fePort = Number(url.port || 5173);
+
 export default defineConfig({
   testDir: './e2e',
-  timeout: 45 * 1000,
+  timeout: 90 * 1000,
   expect: {
-    timeout: 10 * 1000
+    timeout: 15 * 1000
   },
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  workers: 1,
+  reporter: [['list'], ['html', { open: 'never' }]],
   globalSetup: './e2e/global-setup.js',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: feBaseURL,
     trace: 'on-first-retry',
-    viewport: { width: 1280, height: 720 },
+    viewport: { width: 1440, height: 900 },
+    video: 'retain-on-failure',
   },
   projects: [
     {
@@ -23,9 +30,13 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     }
   ],
-  webServer: {
-    command: 'npm run dev',
-    port: 5173,
-    reuseExistingServer: true,
-  },
+  webServer: isLocalFe ? {
+    command: `npm run dev -- --host 127.0.0.1 --port ${fePort}`,
+    port: fePort,
+    reuseExistingServer: false,
+    env: {
+      ...process.env,
+      VITE_API_BASE_URL: apiBaseURL,
+    },
+  } : undefined,
 });

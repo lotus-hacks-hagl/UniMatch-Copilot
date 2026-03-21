@@ -21,6 +21,7 @@ import (
 type caseService struct {
 	db       *gorm.DB
 	caseRepo repository.CaseRepository
+	uniRepo  repository.UniversityRepository
 	actRepo  repository.ActivityRepository
 	aiClient *client.AIClient
 	cfg      *config.Config
@@ -29,6 +30,7 @@ type caseService struct {
 func NewCaseService(
 	db *gorm.DB,
 	caseRepo repository.CaseRepository,
+	uniRepo repository.UniversityRepository,
 	actRepo repository.ActivityRepository,
 	aiClient *client.AIClient,
 	cfg *config.Config,
@@ -36,6 +38,7 @@ func NewCaseService(
 	return &caseService{
 		db:       db,
 		caseRepo: caseRepo,
+		uniRepo:  uniRepo,
 		actRepo:  actRepo,
 		aiClient: aiClient,
 		cfg:      cfg,
@@ -93,24 +96,53 @@ func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*d
 		return nil, apperror.Internal(err, "failed to create case")
 	}
 
+	candidates, err := s.uniRepo.FindAnalyzeCandidates(
+		ctx,
+		[]string(student.PreferredCountries),
+		student.IntendedMajor,
+		student.BudgetUsdPerYear,
+		24,
+	)
+	if err != nil {
+		return nil, apperror.Internal(err, "failed to load university candidates")
+	}
+
+	candidatePayload := make([]client.CandidateUniversity, 0, len(candidates))
+	for _, u := range candidates {
+		candidatePayload = append(candidatePayload, client.CandidateUniversity{
+			UniversityID:             u.ID.String(),
+			UniversityName:           u.Name,
+			Country:                  u.Country,
+			QsRank:                   u.QsRank,
+			IeltsMin:                 u.IeltsMin,
+			SatRequired:              u.SatRequired,
+			GpaExpectationNormalized: u.GpaExpectationNormalized,
+			TuitionUsdPerYear:        u.TuitionUsdPerYear,
+			ScholarshipAvailable:     u.ScholarshipAvailable,
+			AvailableMajors:          []string(u.AvailableMajors),
+			AcceptanceRate:           u.AcceptanceRate,
+		})
+	}
+
 	// Fire & forget: submit analyze job to AI Service
 	analyzeReq := client.AnalyzeJobRequest{
 		JobID:       jobID.String(),
 		CaseID:      caseRecord.ID.String(),
 		CallbackURL: s.cfg.PublicBaseURL + "/internal/jobs/done",
 		Input: client.AnalyzeInput{
-			FullName:            student.FullName,
-			GpaNormalized:       student.GpaNormalized,
-			IeltsOverall:        student.IeltsOverall,
-			SatTotal:            student.SatTotal,
-			ToeflTotal:          student.ToeflTotal,
-			IntendedMajor:       student.IntendedMajor,
-			BudgetUsdPerYear:    student.BudgetUsdPerYear,
-			PreferredCountries:  []string(student.PreferredCountries),
-			TargetIntake:        student.TargetIntake,
-			ScholarshipRequired: student.ScholarshipRequired,
-			Extracurriculars:    student.Extracurriculars,
-			Achievements:        student.Achievements,
+			FullName:              student.FullName,
+			GpaNormalized:         student.GpaNormalized,
+			IeltsOverall:          student.IeltsOverall,
+			SatTotal:              student.SatTotal,
+			ToeflTotal:            student.ToeflTotal,
+			IntendedMajor:         student.IntendedMajor,
+			BudgetUsdPerYear:      student.BudgetUsdPerYear,
+			PreferredCountries:    []string(student.PreferredCountries),
+			TargetIntake:          student.TargetIntake,
+			ScholarshipRequired:   student.ScholarshipRequired,
+			Extracurriculars:      student.Extracurriculars,
+			Achievements:          student.Achievements,
+			CandidateUniversities: candidatePayload,
 		},
 	}
 
@@ -250,9 +282,9 @@ func (s *caseService) handleAnalyzeDone(ctx context.Context, p dto.JobDonePayloa
 
 	if p.Status == "failed" {
 		s.db.WithContext(ctx).Model(&model.Case{}).Where("id = ?", caseID).Updates(map[string]interface{}{
-			"status":                  model.CaseStatusHumanReview,
-			"escalation_reason":       "AI service failed",
-			"processing_finished_at":  &now,
+			"status":                 model.CaseStatusHumanReview,
+			"escalation_reason":      "AI service failed",
+			"processing_finished_at": &now,
 		})
 		s.db.Create(&model.ActivityLog{CaseID: &caseID, EventType: model.EventEscalated, Description: "AI processing failed"})
 		return nil
@@ -296,10 +328,10 @@ func (s *caseService) handleAnalyzeDone(ctx context.Context, p dto.JobDonePayloa
 
 		profileJSON, _ := json.Marshal(result.ProfileSummary)
 		updates := map[string]interface{}{
-			"status":                  finalStatus,
-			"ai_confidence":           result.ConfidenceScore,
-			"profile_summary":         datatypes.JSON(profileJSON),
-			"processing_finished_at":  &now,
+			"status":                 finalStatus,
+			"ai_confidence":          result.ConfidenceScore,
+			"profile_summary":        datatypes.JSON(profileJSON),
+			"processing_finished_at": &now,
 		}
 		if result.EscalationReason != "" {
 			updates["escalation_reason"] = result.EscalationReason

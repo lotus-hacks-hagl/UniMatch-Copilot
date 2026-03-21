@@ -5,6 +5,7 @@ import (
 
 	"unimatch-be/internal/dto"
 	"unimatch-be/internal/service"
+	"unimatch-be/pkg/apperror"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,17 +29,10 @@ func (h *InternalHandler) JobDone(c *gin.Context) {
 	}
 
 	// Route to appropriate service based on job type
-	var appErr interface{ Error() string }
+	var appErr *apperror.AppError
 	switch payload.JobType {
 	case "crawl_university":
-		// Crawl callbacks handled by university service (via type assertion)
-		if uSvc, ok := h.uniSvc.(interface {
-			HandleCrawlDone(c interface{ Deadline() (interface{}, bool) }, p dto.JobDonePayload) interface{ Error() string }
-		}); ok {
-			_ = uSvc
-		}
-		// Delegate directly
-		appErr = h.caseSvc.HandleJobDone(c.Request.Context(), payload)
+		appErr = h.uniSvc.HandleCrawlDone(c.Request.Context(), payload)
 	default:
 		appErr = h.caseSvc.HandleJobDone(c.Request.Context(), payload)
 	}
