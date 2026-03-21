@@ -53,7 +53,7 @@ func main() {
 
 	adminUser := model.User{
 		Username:     "admin",
-		PasswordHash: hashPw("admin123"),
+		PasswordHash: hashPw("admin@123"),
 		Role:         "admin",
 		IsVerified:   true,
 	}
@@ -236,10 +236,10 @@ func main() {
 
 	statuses := []string{
 		model.CaseStatusDone, model.CaseStatusDone, model.CaseStatusDone, model.CaseStatusDone, // 40%
-		model.CaseStatusProcessing, model.CaseStatusProcessing,                                  // 20%
-		model.CaseStatusPending, model.CaseStatusPending,                                        // 15% (approx)
-		model.CaseStatusHumanReview, model.CaseStatusHumanReview,                               // 20%
-		model.CaseStatusFailed,                                                                   // 10%
+		model.CaseStatusProcessing, model.CaseStatusProcessing, // 20%
+		model.CaseStatusPending, model.CaseStatusPending, // 15% (approx)
+		model.CaseStatusHumanReview, model.CaseStatusHumanReview, // 20%
+		model.CaseStatusFailed, // 10%
 	}
 
 	escalationReasons := []string{

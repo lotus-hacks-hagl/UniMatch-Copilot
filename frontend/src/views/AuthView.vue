@@ -57,7 +57,7 @@
               required
               data-testid="auth-username"
               class="w-full px-4 py-3.5 bg-[#f4f5f7] border border-transparent rounded-xl focus:bg-white focus:border-[#a32d2d] focus:ring-4 focus:ring-[#a32d2d]/10 outline-none transition-all duration-300 text-[#18180f] placeholder-[#a8a79d]"
-              :placeholder="$t('auth.username')"
+              placeholder="admin"
             />
           </div>
           <div>
@@ -68,7 +68,7 @@
               required
               data-testid="auth-password"
               class="w-full px-4 py-3.5 bg-[#f4f5f7] border border-transparent rounded-xl focus:bg-white focus:border-[#a32d2d] focus:ring-4 focus:ring-[#a32d2d]/10 outline-none transition-all duration-300 text-[#18180f] placeholder-[#a8a79d]"
-              placeholder="••••••••"
+              placeholder="admin@123"
             />
           </div>
 
