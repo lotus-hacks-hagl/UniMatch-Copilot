@@ -20,11 +20,11 @@ import (
 )
 
 type universityService struct {
-	db      *gorm.DB
-	uniRepo repository.UniversityRepository
-	actRepo repository.ActivityRepository
+	db       *gorm.DB
+	uniRepo  repository.UniversityRepository
+	actRepo  repository.ActivityRepository
 	aiClient *client.AIClient
-	cfg     *config.Config
+	cfg      *config.Config
 }
 
 func NewUniversityService(
@@ -151,8 +151,8 @@ func (s *universityService) HandleCrawlDone(ctx context.Context, p dto.JobDonePa
 
 	// Build partial update map — only update non-nil fields
 	updates := map[string]interface{}{
-		"crawl_status":  result.CrawlStatus,
-		"crawl_job_id":  nil,
+		"crawl_status": result.CrawlStatus,
+		"crawl_job_id": nil,
 	}
 	now := time.Now()
 	updates["last_crawled_at"] = &now
@@ -195,6 +195,41 @@ func (s *universityService) HandleCrawlDone(ctx context.Context, p dto.JobDonePa
 			Description:  fmt.Sprintf("%d changes detected", len(result.ChangesDetected)),
 			Metadata:     datatypes.JSON(metaJSON),
 		})
+	}
+	return nil
+}
+func (s *universityService) Update(ctx context.Context, id uuid.UUID, req dto.UpdateUniversityRequest) *apperror.AppError {
+	u, err := s.uniRepo.FindByID(ctx, id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return apperror.NotFound("university not found")
+		}
+		return apperror.Internal(err, "failed to find university")
+	}
+
+	u.Name = req.Name
+	u.Country = req.Country
+	u.QsRank = req.QsRank
+	u.GroupTag = req.GroupTag
+	u.IeltsMin = req.IeltsMin
+	u.SatRequired = req.SatRequired
+	u.GpaExpectationNormalized = req.GpaExpectationNormalized
+	u.TuitionUsdPerYear = req.TuitionUsdPerYear
+	u.ScholarshipAvailable = req.ScholarshipAvailable
+	u.ScholarshipNotes = req.ScholarshipNotes
+	u.AvailableMajors = pq.StringArray(req.AvailableMajors)
+	u.AcceptanceRate = req.AcceptanceRate
+	u.CounselorNotes = req.CounselorNotes
+
+	if err := s.uniRepo.Update(ctx, u.ID, u); err != nil {
+		return apperror.Internal(err, "failed to update university")
+	}
+	return nil
+}
+
+func (s *universityService) Delete(ctx context.Context, id uuid.UUID) *apperror.AppError {
+	if err := s.uniRepo.Delete(ctx, id); err != nil {
+		return apperror.Internal(err, "failed to delete university")
 	}
 	return nil
 }

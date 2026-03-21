@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 type UniversitiesHandler struct {
@@ -122,4 +123,70 @@ func (h *UniversitiesHandler) CrawlActiveCount(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{"active_crawls": count})
+}
+// Update godoc
+// @Summary Update university
+// @Description Update an existing university record
+// @Tags universities
+// @Accept json
+// @Produce json
+// @Param id path string true "University ID"
+// @Param request body dto.UpdateUniversityRequest true "University Information"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 404 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
+// @Router /universities/{id} [put]
+func (h *UniversitiesHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid university id")
+		return
+	}
+
+	var req dto.UpdateUniversityRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "BAD_REQUEST", err.Error())
+		return
+	}
+	if err := h.validator.Struct(&req); err != nil {
+		response.FailWithDetails(c, http.StatusBadRequest, "VALIDATION_FAILED", "validation failed", err.Error())
+		return
+	}
+
+	appErr := h.svc.Update(c.Request.Context(), id, req)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+	response.OK(c, nil)
+}
+
+// Delete godoc
+// @Summary Delete university
+// @Description Delete a university record
+// @Tags universities
+// @Produce json
+// @Param id path string true "University ID"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
+// @Router /universities/{id} [delete]
+func (h *UniversitiesHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid university id")
+		return
+	}
+
+	appErr := h.svc.Delete(c.Request.Context(), id)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+	response.OK(c, nil)
 }

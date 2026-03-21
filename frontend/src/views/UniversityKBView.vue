@@ -11,6 +11,13 @@ const loading = ref(true)
 const toast = useToast()
 
 const showModal = ref(false)
+const isEditing = ref(false)
+const editingId = ref(null)
+const pagination = ref({
+  page: 1,
+  limit: 10,
+  total: 0
+})
 const formData = ref({
   name: '',
   location: '',
@@ -19,10 +26,33 @@ const formData = ref({
   tuition: ''
 })
 
-const fetchUniversities = async () => {
+const openEditModal = (kb) => {
+  editingId.value = kb.id
+  formData.value = {
+    name: kb.name,
+    location: kb.location,
+    rank: kb.rank === '-' ? '' : kb.rank,
+    acceptance: kb.acceptance === 'N/A' ? '' : kb.acceptance,
+    tuition: kb.tuition === 'N/A' ? '' : kb.tuition
+  }
+  isEditing.value = true
+}
+
+const closeEditModal = () => {
+  isEditing.value = false
+  editingId.value = null
+  formData.value = { name: '', location: '', rank: '', acceptance: '', tuition: '' }
+}
+
+const fetchUniversities = async (page = 1) => {
   loading.value = true
   try {
-    const res = await api.get('/universities', { params: { page: 1, limit: 100 } })
+    const res = await api.get('/universities', { 
+      params: { 
+        page, 
+        limit: pagination.value.limit 
+      } 
+    })
     const uniList = (res.data.data || []).map(u => ({
       id: u.id,
       name: u.name,
@@ -32,7 +62,12 @@ const fetchUniversities = async () => {
       tuition: u.tuition_usd_per_year ? `$${u.tuition_usd_per_year}` : 'N/A'
     }))
     kbs.value = uniList
-    totalKbs.value = res.data.total || uniList.length
+    pagination.value = {
+      ...pagination.value,
+      page: res.data.meta.page,
+      total: res.data.meta.total
+    }
+    totalKbs.value = res.data.meta.total
   } catch (error) {
     console.error('Failed to fetch universities', error)
   } finally {
@@ -57,6 +92,34 @@ const addUniversity = async () => {
     await fetchUniversities()
   } catch(err) {
     toast.addToast(t('universityKb.toasts.addFail'), 'error')
+  }
+}
+
+const updateUniversity = async () => {
+  try {
+    await api.put(`/universities/${editingId.value}`, {
+      name: formData.value.name,
+      country: formData.value.location,
+      qs_rank: parseInt(formData.value.rank) || null,
+      acceptance_rate: formData.value.acceptance ? parseFloat(formData.value.acceptance)/100 : null,
+      tuition_usd_per_year: parseInt(formData.value.tuition.replace(/\D/g,'')) || null
+    })
+    toast.addToast(t('universityKb.toasts.updateSuccess'), 'success')
+    closeEditModal()
+    await fetchUniversities()
+  } catch(err) {
+    toast.addToast(t('universityKb.toasts.updateFail'), 'error')
+  }
+}
+
+const deleteUniversity = async (id) => {
+  if (!confirm(t('universityKb.confirmDelete'))) return
+  try {
+    await api.delete(`/universities/${id}`)
+    toast.addToast(t('universityKb.toasts.deleteSuccess'), 'success')
+    await fetchUniversities()
+  } catch (error) {
+    toast.addToast(t('universityKb.toasts.deleteFail'), 'error')
   }
 }
 
@@ -116,6 +179,7 @@ const runSync = async () => {
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.location') }}</th>
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.acceptance') }}</th>
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.tuition') }}</th>
+              <th class="px-6 py-4 font-bold text-right">Actions</th>
             </tr>
           </thead>
           <TransitionGroup name="list" tag="tbody" class="divide-y divide-black/5 text-[14px]">
@@ -131,9 +195,42 @@ const runSync = async () => {
                 <span v-else class="text-[#8a8980] text-[12px] italic">-</span>
               </td>
               <td class="px-6 py-4 font-bold text-[#18180f]">{{ kb.tuition !== 'N/A' ? kb.tuition + '/yr' : '-' }}</td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                   <button @click.stop="openEditModal(kb)" class="p-2 hover:bg-[#a32d2d]/10 rounded-lg text-[#6b6a62] hover:text-[#a32d2d] transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                   </button>
+                   <button @click.stop="deleteUniversity(kb.id)" class="p-2 hover:bg-red-100 rounded-lg text-[#6b6a62] hover:text-red-600 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                   </button>
+                </div>
+              </td>
             </tr>
           </TransitionGroup>
         </table>
+
+        <!-- Pagination -->
+        <div v-if="pagination.total > pagination.limit" class="px-6 py-4 border-t border-black/5 flex items-center justify-between bg-[#fafafa]">
+          <span class="text-[13px] font-medium text-[#6b6a62]">
+            Showing <span class="text-[#18180f] font-bold">{{ (pagination.page - 1) * pagination.limit + 1 }}</span> to <span class="text-[#18180f] font-bold">{{ Math.min(pagination.page * pagination.limit, pagination.total) }}</span> of <span class="text-[#18180f] font-bold">{{ pagination.total }}</span> universities
+          </span>
+          <div class="flex gap-2">
+            <button 
+              @click="fetchUniversities(pagination.page - 1)" 
+              :disabled="pagination.page === 1"
+              class="btn-outline px-3 py-1.5 disabled:opacity-50 hover:-translate-y-0"
+            >
+              Prev
+            </button>
+            <button 
+              @click="fetchUniversities(pagination.page + 1)" 
+              :disabled="pagination.page * pagination.limit >= pagination.total"
+              class="btn-outline px-3 py-1.5 disabled:opacity-50 hover:-translate-y-0"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </Transition>
     </div>
 
@@ -178,6 +275,53 @@ const runSync = async () => {
             <div class="pt-2 flex items-center justify-end gap-3 mt-6">
               <button type="button" @click="showModal = false" class="btn-outline">Cancel</button>
               <button type="submit" class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]">Save University</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Edit University Modal -->
+    <Transition name="fade">
+      <div v-if="isEditing" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeEditModal"></div>
+        <div class="card-soft w-full max-w-md relative z-10 animate-fade-in shadow-[0_20px_60px_rgba(0,0,0,0.15)] rounded-[24px] p-8">
+          <div class="flex items-center justify-between mb-6">
+             <h3 class="text-xl font-bold text-[#18180f]">{{ $t('universityKb.modal.editTitle') }}</h3>
+             <button @click="closeEditModal" class="text-[#a8a79d] hover:text-[#18180f] transition-colors p-1 bg-gray-50 rounded-full hover:bg-gray-100">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+             </button>
+          </div>
+          
+          <form @submit.prevent="updateUniversity" class="space-y-5">
+            <div>
+              <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.name') }}</label>
+              <input required v-model="formData.name" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. Oxford University" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.location') }}</label>
+                <input required v-model="formData.location" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. Oxford, UK" />
+              </div>
+              <div>
+                <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.rank') }}</label>
+                <input required v-model="formData.rank" type="number" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. 5" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.acceptance') }}</label>
+                <input required v-model="formData.acceptance" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. 17.5%" />
+              </div>
+              <div>
+                <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.tuition') }}</label>
+                <input required v-model="formData.tuition" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. £30,000" />
+              </div>
+            </div>
+            
+            <div class="pt-2 flex items-center justify-end gap-3 mt-6">
+              <button type="button" @click="closeEditModal" class="btn-outline">Cancel</button>
+              <button type="submit" class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]">{{ $t('universityKb.modal.update') }}</button>
             </div>
           </form>
         </div>

@@ -139,20 +139,27 @@
     },
     "modal": {
       "title": "Thêm trường ĐH",
+      "editTitle": "Chỉnh sửa trường ĐH",
       "name": "Tên trường",
       "location": "Vị trí",
       "rank": "Xếp hạng toàn cầu",
       "acceptance": "Tỉ lệ nhận",
       "tuition": "Học phí (Ước tính)",
       "cancel": "Hủy",
-      "save": "Lưu thông tin"
+      "save": "Lưu thông tin",
+      "update": "Cập nhật thông tin"
     },
     "toasts": {
       "addSuccess": "Thêm trường thành công",
       "addFail": "Thêm trường thất bại",
       "syncSuccess": "Quá trình thu thập dữ liệu TinyFish đã bắt đầu ngầm",
-      "syncFail": "Kích hoạt đồng bộ thất bại"
-    }
+      "syncFail": "Kích hoạt đồng bộ thất bại",
+      "updateSuccess": "Cập nhật trường thành công",
+      "updateFail": "Cập nhật trường thất bại",
+      "deleteSuccess": "Xóa trường thành công",
+      "deleteFail": "Xóa trường thất bại"
+    },
+    "confirmDelete": "Bạn có chắc chắn muốn xóa trường này không? Hành động này không thể hoàn tác."
   },
   "students": {
     "title": "Tất cả sinh viên",

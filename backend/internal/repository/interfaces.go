@@ -27,6 +27,8 @@ type UniversityRepository interface {
 	FindCrawlable(ctx context.Context) ([]model.University, error)
 	CountByCrawlStatus(ctx context.Context, status string) (int64, error)
 	UpdateCrawlResult(ctx context.Context, id uuid.UUID, fields map[string]interface{}) error
+	Update(ctx context.Context, id uuid.UUID, u *model.University) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type ActivityRepository interface {

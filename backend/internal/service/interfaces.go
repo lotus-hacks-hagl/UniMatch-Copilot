@@ -29,6 +29,8 @@ type UniversityService interface {
 	CrawlAll(ctx context.Context) (int, *apperror.AppError)
 	CountActiveCrawls(ctx context.Context) (int64, *apperror.AppError)
 	HandleCrawlDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdateUniversityRequest) *apperror.AppError
+	Delete(ctx context.Context, id uuid.UUID) *apperror.AppError
 }
 
 type DashboardService interface {

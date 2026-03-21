@@ -93,6 +93,8 @@ func SetupRouter(
 				{
 					unis.GET("", uniH.List)
 					unis.POST("", uniH.Create)
+					unis.PUT("/:id", uniH.Update)
+					unis.DELETE("/:id", uniH.Delete)
 					unis.POST("/crawl-all", uniH.CrawlAll)
 					unis.GET("/crawl-active", uniH.CrawlActiveCount)
 				}

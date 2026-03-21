@@ -139,20 +139,27 @@
     },
     "modal": {
       "title": "Add University",
+      "editTitle": "Edit University",
       "name": "Institution Name",
       "location": "Location",
       "rank": "Global Rank",
       "acceptance": "Acceptance Rate",
       "tuition": "Tuition (Est.)",
       "cancel": "Cancel",
-      "save": "Save University"
+      "save": "Save University",
+      "update": "Update University"
     },
     "toasts": {
       "addSuccess": "University added successfully",
       "addFail": "Failed to add university",
       "syncSuccess": "TinyFish crawl started in background",
-      "syncFail": "Failed to trigger Sync"
-    }
+      "syncFail": "Failed to trigger Sync",
+      "updateSuccess": "University updated successfully",
+      "updateFail": "Failed to update university",
+      "deleteSuccess": "University deleted successfully",
+      "deleteFail": "Failed to delete university"
+    },
+    "confirmDelete": "Are you sure you want to delete this university? This action cannot be undone."
   },
   "students": {
     "title": "All Students",

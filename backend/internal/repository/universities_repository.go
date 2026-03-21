@@ -109,3 +109,10 @@ func (r *universityRepository) UpdateCrawlResult(ctx context.Context, id uuid.UU
 		Where("id = ?", id).
 		Updates(fields).Error
 }
+func (r *universityRepository) Update(ctx context.Context, id uuid.UUID, u *model.University) error {
+	return r.db.WithContext(ctx).Where("id = ?", id).Save(u).Error
+}
+
+func (r *universityRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.University{}, "id = ?", id).Error
+}
