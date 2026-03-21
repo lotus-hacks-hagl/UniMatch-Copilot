@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useI18n } from 'vue-i18n'
+
+const router = useRouter()
 
 const { t } = useI18n()
 const students = ref([])
@@ -48,10 +51,6 @@ const getAvatar = (name) => {
         <h2 class="text-2xl font-bold text-[#18180f] tracking-tight">{{ t('students.title') }}</h2>
         <p class="text-[14px] text-[#6b6a62] mt-1">{{ t('students.subtitle') }}</p>
       </div>
-      <button class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-        Add Student
-      </button>
     </div>
 
     <div class="card-soft overflow-hidden p-0 flex flex-col min-h-[400px]">

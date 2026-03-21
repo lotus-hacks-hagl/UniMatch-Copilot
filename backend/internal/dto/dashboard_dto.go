@@ -5,11 +5,11 @@ import "time"
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
 
 type DashboardStats struct {
-	CasesToday           int64   `json:"cases_today"`
-	AwaitingReview       int64   `json:"awaiting_review"`
-	AvgProcessingMinutes float64 `json:"avg_processing_minutes"`
-	AiConfidenceAvg      float64 `json:"ai_confidence_avg"`
-	ActiveCrawls         int64   `json:"active_crawls"`
+	CasesToday           int64   `json:"casesToday"`
+	AwaitingReview       int64   `json:"awaitingReview"`
+	AvgProcessingMinutes float64 `json:"avgProcessingTime"`
+	AiConfidenceAvg      float64 `json:"aiConfidenceAvg"`
+	ActiveCrawls         int64   `json:"activeCrawls"`
 }
 
 type CasesByDay struct {

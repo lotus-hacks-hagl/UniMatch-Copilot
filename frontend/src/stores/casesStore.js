@@ -19,7 +19,7 @@ export const useCasesStore = defineStore('cases', {
       this.loading = true
       this.filter = filterStatus
       let queryStatus = filterStatus.toLowerCase().replace(' ', '_')
-      if (filterStatus === 'All') queryStatus = 'all'
+      if (filterStatus === 'All' || filterStatus === 'All cases') queryStatus = 'all'
       
       try {
         const params = { status: queryStatus, page: 1, limit: 100 }
@@ -49,11 +49,36 @@ export const useCasesStore = defineStore('cases', {
     async fetchStats() {
       try {
         const response = await api.get('/dashboard/stats')
-        if (response.data && response.data.success) {
-          this.stats = response.data.data
-        }
+        this.stats = response.data
       } catch (error) {
         console.error('Failed to fetch stats', error)
+      }
+    },
+    async fetchCasesByDay() {
+      try {
+        const response = await api.get('/dashboard/cases-by-day')
+        return response.data
+      } catch (error) {
+        console.error('Failed to fetch cases by day', error)
+        return []
+      }
+    },
+    async fetchEscalationTrend() {
+      try {
+        const response = await api.get('/dashboard/escalation-trend')
+        return response.data
+      } catch (error) {
+        console.error('Failed to fetch escalation trend', error)
+        return []
+      }
+    },
+    async fetchAnalytics() {
+      try {
+        const response = await api.get('/dashboard/analytics')
+        return response.data
+      } catch (error) {
+        console.error('Failed to fetch analytics', error)
+        return null
       }
     }
   }

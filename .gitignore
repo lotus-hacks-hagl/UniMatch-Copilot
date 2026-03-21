@@ -212,3 +212,5 @@ dist/
 build/
 .agent/
 .agents/
+playwright-report/
+test-results

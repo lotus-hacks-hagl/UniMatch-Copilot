@@ -67,6 +67,10 @@ const router = createRouter({
       name: 'review-queue',
       component: () => import('../views/ReviewQueueView.vue'),
       meta: { title: 'Review Queue', requiresAuth: true, requiresVerification: true }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/'
     }
   ]
 })

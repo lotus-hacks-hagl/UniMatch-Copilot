@@ -29,10 +29,39 @@ const handleClaim = async (event, id) => {
   }
 }
 
-onMounted(() => {
-  casesStore.fetchStats()
-  casesStore.fetchCases('All cases')
-})
+// Chart reactive data
+const barChartData = ref({ labels: [], datasets: [] })
+const donutChartData = ref({ labels: [], datasets: [] })
+const lineChartData = ref({ labels: [], datasets: [] })
+
+const barChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: { 
+    x: { grid: { display: false } }, 
+    y: { grid: { borderDash: [4, 4] }, beginAtZero: true } 
+  }
+}
+
+const donutChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '75%',
+  plugins: { 
+    legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } } 
+  }
+}
+
+const lineChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: { 
+    x: { grid: { display: false } }, 
+    y: { grid: { borderDash: [4, 4] }, beginAtZero: true } 
+  }
+}
 
 const changeFilter = (f) => {
   casesStore.fetchCases(f)
@@ -80,67 +109,74 @@ const formatConfidence = (val) => {
   return Math.round((val || 0) * 100)
 }
 
-// Chart configurations
-const barChartData = {
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [{
-    label: 'Cases',
-    backgroundColor: '#a32d2d',
-    borderRadius: 6,
-    data: [12, 19, 10, 25, 14, 20, 15]
-  }]
+const formatRelativeTime = (date) => {
+  if (!date) return ''
+  const now = new Date()
+  const then = new Date(date)
+  const diff = Math.floor((now - then) / 1000)
+  if (diff < 60) return 'Just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return then.toLocaleDateString()
 }
 
-const barChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: { 
-    x: { grid: { display: false } }, 
-    y: { grid: { borderDash: [4, 4] }, beginAtZero: true } 
+const loadCharts = async () => {
+  const [dailyResponse, escalationResponse] = await Promise.all([
+    casesStore.fetchCasesByDay(),
+    casesStore.fetchEscalationTrend()
+  ])
+
+  // Process Bar Chart
+  const dailyLabels = dailyResponse.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }))
+  const dailyCounts = dailyResponse.map(d => d.count)
+  barChartData.value = {
+    labels: dailyLabels.length ? dailyLabels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [{
+      label: 'Cases',
+      backgroundColor: '#a32d2d',
+      borderRadius: 6,
+      data: dailyCounts.length ? dailyCounts : [0, 0, 0, 0, 0, 0, 0]
+    }]
+  }
+
+  // Process Line Chart
+  const escalationLabels = escalationResponse.map(d => new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }))
+  const escalationCounts = escalationResponse.map(d => d.count)
+  lineChartData.value = {
+    labels: escalationLabels.length ? escalationLabels : ['W1', 'W2', 'W3', 'W4', 'W5'],
+    datasets: [{
+      label: 'Escalations',
+      borderColor: '#a32d2d',
+      backgroundColor: 'rgba(163, 45, 45, 0.1)',
+      data: escalationCounts.length ? escalationCounts : [0, 0, 0, 0, 0],
+      fill: true,
+      tension: 0.4
+    }]
+  }
+
+  // Handle Donut (Static for now until specific distribution endpoint is added or client-side derived)
+  const safeCount = cases.value.filter(c => c.status === 'done').length
+  const reviewCount = cases.value.filter(c => c.status === 'human_review').length
+  const procCount = cases.value.filter(c => c.status === 'processing').length
+  
+  donutChartData.value = {
+    labels: ['Safe', 'Match', 'Reach'],
+    datasets: [{
+      backgroundColor: ['#66bb6a', '#f57f17', '#e0e0e0'],
+      data: [safeCount, procCount, reviewCount], // Using status as a proxy for tier for now
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
   }
 }
 
-const donutChartData = {
-  labels: ['Safe', 'Match', 'Reach'],
-  datasets: [{
-    backgroundColor: ['#66bb6a', '#f57f17', '#e0e0e0'],
-    data: [45, 30, 25],
-    borderWidth: 0,
-    hoverOffset: 6
-  }]
-}
-
-const donutChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  cutout: '75%',
-  plugins: { 
-    legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } } 
-  }
-}
-
-const lineChartData = {
-  labels: ['W1', 'W2', 'W3', 'W4', 'W5'],
-  datasets: [{
-    label: 'Escalation %',
-    borderColor: '#a32d2d',
-    backgroundColor: 'rgba(163, 45, 45, 0.1)',
-    data: [15, 12, 18, 14, 20],
-    fill: true,
-    tension: 0.4
-  }]
-}
-
-const lineChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: { 
-    x: { grid: { display: false } }, 
-    y: { grid: { borderDash: [4, 4] }, beginAtZero: true, max: 25 } 
-  }
-}
+onMounted(async () => {
+  await Promise.all([
+    casesStore.fetchStats(),
+    casesStore.fetchCases('All cases')
+  ])
+  await loadCharts()
+})
 </script>
 
 <template>
@@ -289,7 +325,7 @@ const lineChartOptions = {
           <!-- Absolute centered total counter -->
           <div class="relative h-[180px] w-full flex items-center justify-center">
             <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-2 pr-16 text-center">
-              <span class="text-[28px] font-black text-[#18180f] leading-none">100</span>
+              <span class="text-[28px] font-black text-[#18180f] leading-none">{{ cases.length }}</span>
               <span class="text-[11px] font-bold text-[#8a8980] uppercase tracking-wider">Total</span>
             </div>
             <Doughnut :data="donutChartData" :options="donutChartOptions" />

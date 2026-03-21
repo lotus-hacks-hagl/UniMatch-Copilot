@@ -23,7 +23,7 @@ const fetchUniversities = async () => {
   loading.value = true
   try {
     const res = await api.get('/universities', { params: { page: 1, limit: 100 } })
-    const uniList = (res.data.universities || []).map(u => ({
+    const uniList = (res.data.data || []).map(u => ({
       id: u.id,
       name: u.name,
       location: u.country || 'N/A',

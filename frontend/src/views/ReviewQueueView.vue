@@ -15,7 +15,7 @@ const fetchQueue = async () => {
     const response = await api.get('/cases', {
       params: { status: 'human_review', page: 1, limit: 100 }
     })
-    queue.value = response.data.cases || []
+    queue.value = response.data.data || []
   } catch (error) {
     console.error('Failed to fetch human review queue', error)
   } finally {
