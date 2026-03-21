@@ -184,15 +184,15 @@ onMounted(async () => {
     
     <!-- TOP KPIs ROW (Always Visible) -->
     <div class="grid grid-cols-4 gap-5">
-      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
+      <div data-testid="cases-stats-cases-today" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
         <div class="text-[14px] font-medium text-[#18180f] mb-3">{{ $t('cases.casesToday') }}</div>
         <div class="text-[36px] font-bold text-[#18180f] leading-none text-transparent bg-clip-text bg-gradient-to-r from-[#ce3e3e] to-[#a32d2d]">{{ stats.casesToday || 0 }}</div>
       </div>
-      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
+      <div data-testid="cases-stats-avg-processing" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
         <div class="text-[14px] font-medium text-[#18180f] mb-3">{{ $t('cases.avgProcessing') }}</div>
         <div class="text-[36px] font-bold text-[#18180f] leading-none">{{ stats.avgProcessingTime || '0m' }}</div>
       </div>
-      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden">
+      <div data-testid="cases-stats-awaiting-review" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 relative overflow-hidden">
         <div class="text-[14px] font-medium text-[#18180f] mb-3 flex items-center justify-between relative z-10">
           {{ $t('cases.awaitingReview') }}
           <span v-if="stats.awaitingReview > 0" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
@@ -201,7 +201,7 @@ onMounted(async () => {
         <!-- subtle danger bg if high -->
         <div v-if="stats.awaitingReview > 0" class="absolute right-0 bottom-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl -mr-10 -mb-10 pointer-events-none"></div>
       </div>
-      <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
+      <div data-testid="cases-stats-ai-confidence" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
         <div class="text-[14px] font-medium text-[#18180f] mb-3">{{ $t('cases.aiConfidence') }}</div>
         <div class="text-[36px] font-bold text-[#18180f] leading-none flex items-end gap-2">
           {{ formatConfidence(stats.aiConfidenceAvg) }}%
@@ -312,7 +312,7 @@ onMounted(async () => {
       <div class="w-full xl:w-[420px] shrink-0 space-y-6 flex flex-col justify-start">
         
         <!-- Cases per day Chart -->
-        <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+        <div data-testid="cases-chart-cases-per-day" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
           <div class="text-[15px] font-bold text-[#18180f] mb-4">{{ $t('cases.charts.casesPerDay') }}</div>
           <div class="h-[180px] w-full">
             <Bar :data="barChartData" :options="barChartOptions" />
@@ -320,7 +320,7 @@ onMounted(async () => {
         </div>
         
         <!-- Match Tier Distribution Chart -->
-        <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+        <div data-testid="cases-chart-match-tier" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
           <div class="text-[15px] font-bold text-[#18180f] mb-2">{{ $t('cases.charts.matchTierDist') }}</div>
           <!-- Absolute centered total counter -->
           <div class="relative h-[180px] w-full flex items-center justify-center">
@@ -333,7 +333,7 @@ onMounted(async () => {
         </div>
         
         <!-- Escalation Rate Trend Chart -->
-        <div class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
+        <div data-testid="cases-chart-escalation-trend" class="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03]">
           <div class="text-[15px] font-bold text-[#18180f] mb-4">{{ $t('cases.charts.escalationRate') }}</div>
           <div class="h-[140px] w-full">
             <Line :data="lineChartData" :options="lineChartOptions" />

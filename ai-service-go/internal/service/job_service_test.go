@@ -96,6 +96,54 @@ func TestBuildAnalyzeResultEmptyCandidatesEscalates(t *testing.T) {
 	}
 }
 
+func TestBuildAnalyzeResultWithoutProviderEvidenceOrOpenAIReturnsNoRecommendations(t *testing.T) {
+	t.Parallel()
+
+	svc := newTestJobService(t, providerBehavior{}, providerBehavior{}, openAIBehavior{})
+	svc.openai = provider.NewOpenAIClient(&config.Config{
+		OpenAIAPIKey:  "",
+		OpenAIBaseURL: "http://unused.test",
+		OpenAIModel:   "gpt-4.1-mini",
+		HTTPTimeout:   time.Second,
+	})
+
+	result, err := svc.buildAnalyzeResult(context.Background(), dto.AnalyzeJobRequest{
+		JobID:       "job-no-evidence",
+		CaseID:      "case-no-evidence",
+		CallbackURL: "http://callback.test",
+		Input: dto.AnalyzeInput{
+			FullName:           "No Evidence Student",
+			GpaNormalized:      3.6,
+			IntendedMajor:      "Computer Science",
+			BudgetUsdPerYear:   30000,
+			PreferredCountries: []string{"USA"},
+			TargetIntake:       "Fall 2026",
+			CandidateUniversities: []dto.CandidateUniversity{
+				{
+					UniversityID:   "u-1",
+					UniversityName: "Alpha University",
+					Country:        "USA",
+					AvailableMajors: []string{
+						"Computer Science",
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(result.Recommendations) != 0 {
+		t.Fatalf("expected no recommendations when no provider evidence and no OpenAI, got %d", len(result.Recommendations))
+	}
+	if !result.EscalationNeeded {
+		t.Fatalf("expected escalation when no provider evidence and no OpenAI")
+	}
+	if result.ConfidenceScore >= 0.1 {
+		t.Fatalf("expected very low confidence, got %v", result.ConfidenceScore)
+	}
+}
+
 func TestAnalyzeEndpointTracksFiveAttemptsAndUsesOpenAI(t *testing.T) {
 	exaBehavior := providerBehavior{
 		handler: func(w http.ResponseWriter, r *http.Request, count int) {

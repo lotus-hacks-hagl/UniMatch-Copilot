@@ -24,7 +24,7 @@ const router = createRouter({
       path: '/cases',
       name: 'cases',
       component: () => import('../views/CasesView.vue'),
-      meta: { title: 'Case overview', sub: 'Saturday, 21 Mar 2026', requiresAuth: true, requiresVerification: true }
+      meta: { title: 'Case overview', requiresAuth: true, requiresVerification: true }
     },
     {
       path: '/cases/new',

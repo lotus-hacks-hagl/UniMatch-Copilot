@@ -35,6 +35,17 @@ const sortedRecommendations = computed(() => {
   return [...caseData.value.recommendations].sort((a, b) => a.rank_order - b.rank_order)
 })
 
+const aiProvenance = computed(() => caseData.value?.profile_summary?.provenance || null)
+const aiProvenanceMode = computed(() => aiProvenance.value?.mode || '')
+const aiProvenanceNote = computed(() => {
+  if (caseData.value?.status === 'human_review' && caseData.value?.escalation_reason) {
+    return caseData.value.escalation_reason
+  }
+  return aiProvenance.value?.note || t('caseDetail.autoApproved')
+})
+const isHeuristicFallback = computed(() => aiProvenanceMode.value === 'heuristic_fallback')
+const isModelFilled = computed(() => ['openai_fill', 'provider_plus_openai_fill'].includes(aiProvenanceMode.value))
+
 const fetchCase = async () => {
   try {
     const res = await api.get('/cases/' + route.params.id)
@@ -110,6 +121,47 @@ const generateReport = async () => {
     alert('Failed to trigger report.')
   }
 }
+
+const noteText = ref('')
+const isAddingNote = ref(false)
+const addNote = async () => {
+  if (!noteText.value.trim()) return
+  isAddingNote.value = true
+  try {
+    await api.post(`/cases/${route.params.id}/notes`, { text: noteText.value })
+    noteText.value = ''
+    await fetchCase()
+  } catch (err) {
+    alert('Failed to add note')
+  } finally {
+    isAddingNote.value = false
+  }
+}
+
+const isReAnalyzing = ref(false)
+const reAnalyze = async () => {
+  if (!confirm('This will clear current recommendations and trigger a new AI analysis. Continue?')) return
+  isReAnalyzing.value = true
+  try {
+    await api.post(`/cases/${route.params.id}/analyze`)
+    alert('Re-analysis triggered!')
+    await fetchCase()
+    // Start polling if not already polling
+    if (!pollTimer) {
+      pollTimer = setInterval(async () => {
+        await fetchCase()
+        if (!['pending', 'processing'].includes(caseData.value?.status)) {
+          clearInterval(pollTimer)
+          pollTimer = null
+        }
+      }, 3000)
+    }
+  } catch (err) {
+    alert('Failed to trigger re-analysis')
+  } finally {
+    isReAnalyzing.value = false
+  }
+}
 </script>
 
 <template>
@@ -159,8 +211,14 @@ const generateReport = async () => {
                   {{ formatConfidence(caseData.ai_confidence) }}%
                 </div>
               </div>
+              <div v-if="aiProvenanceMode" class="mb-2">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold border uppercase tracking-wider"
+                      :class="isHeuristicFallback ? 'bg-red-50 text-[#a32d2d] border-red-100' : (isModelFilled ? 'bg-[#fff8e1] text-[#f57f17] border-[#ffecb3]' : 'bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]')">
+                  {{ aiProvenanceMode.replaceAll('_', ' ') }}
+                </span>
+              </div>
               <p class="text-[13px] text-[#6b6a62] leading-relaxed">
-                {{ caseData.status === 'human_review' ? caseData.escalation_reason || $t('caseDetail.escalatedReview') : $t('caseDetail.autoApproved') }}
+                {{ aiProvenanceNote }}
               </p>
             </div>
 
@@ -264,14 +322,21 @@ const generateReport = async () => {
                      <div class="text-[15px] font-bold text-[#a32d2d]">{{ $t('caseDetail.aiAnalyzing') }}</div>
                      <p class="text-[13px] text-[#6b6a62] mt-2">The Copilot is matching profiles against the global knowledge base...</p>
                    </div>
-                   <div v-else-if="!caseData.recommendations || caseData.recommendations.length === 0" class="flex flex-col items-center justify-center p-24 text-center">
+                <div v-else-if="!caseData.recommendations || caseData.recommendations.length === 0" class="flex flex-col items-center justify-center p-24 text-center">
                      <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                        <svg class="w-10 h-10 text-[#a8a79d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                      </div>
-                     <h3 class="text-[16px] font-bold text-[#18180f] mb-1">No AI recommendations found</h3>
-                     <p class="text-[14px] text-[#6b6a62]">Trigger a re-analysis or manually edit the target list.</p>
-                   </div>
+                      <h3 class="text-[16px] font-bold text-[#18180f] mb-1">No AI recommendations found</h3>
+                      <p class="text-[14px] text-[#6b6a62] mb-6">Trigger a re-analysis or manually edit the target list.</p>
+                      <button @click="reAnalyze" :disabled="isReAnalyzing" class="btn-primary px-8">
+                        {{ isReAnalyzing ? 'Starting AI...' : 'Run Analysis Now' }}
+                      </button>
+                    </div>
                    <TransitionGroup v-else name="list" tag="div" class="grid grid-cols-1 gap-5">
+                      <div v-if="aiProvenanceMode && aiProvenanceMode !== 'provider_backed'" class="bg-[#fff8e1] border border-[#ffecb3] rounded-[16px] p-4 text-[13px] text-[#7a5610]">
+                        <div class="font-bold mb-1">AI provenance</div>
+                        <div>{{ aiProvenanceNote }}</div>
+                      </div>
                       <div v-for="rec in sortedRecommendations" :key="rec.id" class="bg-white p-6 rounded-[20px] shadow-sm border border-black/5 hover:shadow-md hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer">
                         <div class="flex justify-between items-start mb-4">
                            <div>
@@ -319,13 +384,86 @@ const generateReport = async () => {
                   </div>
                 </div>
 
-                <!-- Others -->
+                <!-- Documents Tab -->
+                <div v-else-if="activeTab === 'documents'" key="documents" class="space-y-6">
+                  <div class="bg-white p-8 rounded-[20px] shadow-sm border border-black/5">
+                    <h3 class="text-lg font-bold text-[#18180f] mb-6">Contract & Documents</h3>
+                    <div class="space-y-4">
+                      <div class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-red-600 shadow-sm font-bold">PDF</div>
+                          <div>
+                            <div class="text-[14px] font-bold text-[#18180f]">Student_Contract_v1.pdf</div>
+                            <div class="text-[12px] text-[#6b6a62]">Uploaded Mar 21, 2026</div>
+                          </div>
+                        </div>
+                        <button class="text-[#a32d2d] font-bold text-[13px] hover:underline">Download</button>
+                      </div>
+                      <div class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm font-bold">DOC</div>
+                          <div>
+                            <div class="text-[14px] font-bold text-[#18180f]">Transcript_Official.docx</div>
+                            <div class="text-[12px] text-[#6b6a62]">Uploaded Mar 21, 2026</div>
+                          </div>
+                        </div>
+                        <button class="text-[#a32d2d] font-bold text-[13px] hover:underline">Download</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Communication Tab -->
+                <div v-else-if="activeTab === 'communication'" key="communication" class="space-y-6">
+                  <div class="bg-white p-8 rounded-[20px] shadow-sm border border-black/5 flex flex-col min-h-[500px]">
+                    <h3 class="text-lg font-bold text-[#18180f] mb-6">Internal Notes & Activity</h3>
+                    
+                    <!-- Notes Feed -->
+                    <div class="flex-1 space-y-6 mb-8 overflow-y-auto max-h-[400px] pr-2">
+                      <div v-for="log in (caseData.activity_logs || []).slice().reverse()" :key="log.id" class="flex gap-4">
+                        <div class="w-10 h-10 rounded-full bg-[#f4f5f7] border border-black/5 flex items-center justify-center shrink-0 font-bold text-[13px]">
+                          {{ getAvatar(log.user?.username || 'System') }}
+                        </div>
+                        <div class="flex-1">
+                          <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-[14px] text-[#18180f]">{{ log.user?.username || 'System' }}</span>
+                            <span class="text-[11px] text-[#6b6a62]">{{ new Date(log.created_at).toLocaleString() }}</span>
+                          </div>
+                          <div class="text-[14px] text-[#6b6a62] p-4 bg-[#fafafa] rounded-2xl rounded-tl-none border border-black/5 leading-relaxed">
+                            {{ log.event_type === 'case_note' ? log.details : (log.event_type.replaceAll('_', ' ') + ': ' + log.details) }}
+                          </div>
+                        </div>
+                      </div>
+                      <div v-if="!caseData.activity_logs?.length" class="text-center py-20 opacity-50">
+                        <p class="text-[14px]">No activity recorded yet.</p>
+                      </div>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="relative">
+                      <textarea 
+                        v-model="noteText"
+                        placeholder="Type a note or update..." 
+                        class="w-full p-4 pr-32 bg-[#f4f5f7] rounded-xl border border-black/5 focus:bg-white focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none transition-all text-[14px] min-h-[100px] resize-none"
+                      ></textarea>
+                      <button 
+                        @click="addNote"
+                        :disabled="!noteText.trim() || isAddingNote"
+                        class="absolute bottom-4 right-4 btn-primary px-6 h-10 flex items-center justify-center shadow-lg disabled:opacity-50"
+                      >
+                        {{ isAddingNote ? 'Saving...' : 'Post Note' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Others (Fallback) -->
                 <div v-else key="others" class="flex flex-col items-center justify-center p-24 text-center opacity-70">
                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                      <svg class="w-10 h-10 text-[#a8a79d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
                    </div>
-                   <div class="text-[16px] font-bold text-[#18180f] mb-1">{{ $t('caseDetail.underConstruction') }}</div>
-                   <p class="text-[14px] text-[#6b6a62]">This module is currently being built by the development team.</p>
+                   <div class="text-[16px] font-bold text-[#18180f] mb-1">Under Construction</div>
+                   <p class="text-[14px] text-[#6b6a62]">This module is currently being built.</p>
                 </div>
               </Transition>
             </div>

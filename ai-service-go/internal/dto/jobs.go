@@ -46,6 +46,7 @@ type AnalyzeInput struct {
 	ScholarshipRequired   bool                  `json:"scholarship_required"`
 	Extracurriculars      string                `json:"extracurriculars"`
 	Achievements          string                `json:"achievements"`
+	BackgroundText        string                `json:"background_text"`
 	CandidateUniversities []CandidateUniversity `json:"candidate_universities"`
 }
 

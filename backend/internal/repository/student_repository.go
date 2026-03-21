@@ -44,3 +44,11 @@ func (r *studentRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.
 	}
 	return &s, nil
 }
+
+func (r *studentRepository) Update(ctx context.Context, id uuid.UUID, s *model.Student) error {
+	return r.db.WithContext(ctx).Model(&model.Student{}).Where("id = ?", id).Updates(s).Error
+}
+
+func (r *studentRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.Student{}, "id = ?", id).Error
+}

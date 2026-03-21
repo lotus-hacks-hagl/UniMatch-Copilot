@@ -67,7 +67,14 @@ func SetupRouter(
 			verified := protected.Group("/")
 			verified.Use(middleware.RequireVerified())
 			{
-				// Cases routes
+				students := verified.Group("/students")
+				{
+					students.GET("", studentH.List)
+					students.GET("/:id", studentH.GetByID)
+					students.PUT("/:id", studentH.Update)
+					students.DELETE("/:id", studentH.Delete)
+				}
+
 				cases := verified.Group("/cases")
 				{
 					cases.POST("", casesH.Create)
@@ -75,8 +82,10 @@ func SetupRouter(
 					cases.GET("/count", casesH.Count)
 					cases.GET("/:id", casesH.GetByID)
 					cases.POST("/:id/claim", casesH.Claim)
-			cases.PUT("/:id", casesH.Update)
+					cases.PUT("/:id", casesH.Update)
 					cases.POST("/:id/report", casesH.RequestReport)
+					cases.POST("/:id/notes", casesH.AddNote)
+					cases.POST("/:id/analyze", casesH.ReAnalyze)
 				}
 
 				// Universities routes
@@ -99,13 +108,6 @@ func SetupRouter(
 
 				// Activity log
 				verified.GET("/activity-log", dashH.ActivityLog)
-
-				// Students routes
-				students := verified.Group("/students")
-				{
-					students.GET("", studentH.List)
-					students.GET("/:id", studentH.GetByID)
-				}
 			}
 		}
 	}

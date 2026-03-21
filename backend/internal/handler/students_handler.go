@@ -3,7 +3,8 @@ package handler
 import (
 	"net/http"
 	"strconv"
-
+	
+	"unimatch-be/internal/dto"
 	"unimatch-be/internal/service"
 	"unimatch-be/pkg/response"
 
@@ -46,4 +47,42 @@ func (h *StudentHandler) GetByID(c *gin.Context) {
 	}
 
 	response.OK(c, student)
+}
+
+func (h *StudentHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid student id")
+		return
+	}
+
+	var req dto.UpdateStudentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_INPUT", err.Error())
+		return
+	}
+
+	appErr := h.svc.Update(c.Request.Context(), id, req)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, nil)
+}
+
+func (h *StudentHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid student id")
+		return
+	}
+
+	appErr := h.svc.Delete(c.Request.Context(), id)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, nil)
 }

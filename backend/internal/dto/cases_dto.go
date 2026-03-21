@@ -24,6 +24,7 @@ type CreateCaseRequest struct {
 	Extracurriculars       string   `json:"extracurriculars"`
 	Achievements           string   `json:"achievements"`
 	PersonalStatementNotes string   `json:"personal_statement_notes"`
+	BackgroundText         string   `json:"background_text"`
 }
 
 type IeltsBreakdown struct {
@@ -46,6 +47,10 @@ func (r *CreateCaseRequest) Validate() error {
 type CaseCreatedResponse struct {
 	CaseID string `json:"case_id"`
 	Status string `json:"status"`
+}
+
+type CaseNoteRequest struct {
+	Text string `json:"text" validate:"required"`
 }
 
 type ReportStatusResponse struct {

@@ -45,4 +45,6 @@ type StudentRepository interface {
 	FindAll(ctx context.Context, page, limit int) ([]model.Student, int64, error)
 	Count(ctx context.Context) (int64, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*model.Student, error)
+	Update(ctx context.Context, id uuid.UUID, s *model.Student) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }

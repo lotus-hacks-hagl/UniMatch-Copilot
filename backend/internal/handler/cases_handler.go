@@ -232,3 +232,49 @@ func (h *CasesHandler) Update(c *gin.Context) {
 
 	response.OK(c, nil)
 }
+
+func (h *CasesHandler) AddNote(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid case id")
+		return
+	}
+
+	var req dto.CaseNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_INPUT", err.Error())
+		return
+	}
+
+	// Get user ID from context
+	userValue, exists := c.Get("user_id")
+	var userID *uuid.UUID
+	if exists {
+		uid, _ := uuid.Parse(userValue.(string))
+		userID = &uid
+	}
+
+	appErr := h.svc.AddNote(c.Request.Context(), id, userID, req.Text)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, nil)
+}
+
+func (h *CasesHandler) ReAnalyze(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid case id")
+		return
+	}
+
+	appErr := h.svc.ReAnalyze(c.Request.Context(), id)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, nil)
+}

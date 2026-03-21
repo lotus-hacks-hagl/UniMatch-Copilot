@@ -190,21 +190,25 @@ func (s *jobService) buildAnalyzeResult(ctx context.Context, req dto.AnalyzeJobR
 		buildAnalyzeTinyfishGoal(req.Input),
 	)
 
-	recommendations := s.buildHeuristicRecommendations(shortlist, req.Input, evidence)
+	providerEvidenceFound := hasProviderEvidence(evidence)
+	fallbackRanking := s.buildHeuristicRecommendations(shortlist, req.Input, evidence)
+	recommendations := []dto.RecommendationResult{}
+	if providerEvidenceFound {
+		recommendations = append(recommendations, fallbackRanking...)
+	}
 	confidence := computeConfidence(evidence.Coverage, len(recommendations), len(shortlist))
+	openAIFillUsed := false
 
 	if s.shouldUseOpenAIFillAnalyze(recommendations, evidence) {
-		if filled := s.fillAnalyzeWithOpenAI(ctx, req, shortlist, evidence, recommendations); filled != nil {
+		if filled := s.fillAnalyzeWithOpenAI(ctx, req, shortlist, evidence, fallbackRanking); filled != nil {
 			recommendations = filled.Recommendations
 			if filled.ConfidenceScore > 0 {
 				confidence = filled.ConfidenceScore
 			}
+			openAIFillUsed = true
 		}
 	}
 
-	if len(recommendations) == 0 && s.cfg.FallbackEnabled {
-		recommendations = s.buildHeuristicRecommendations(preRanked, req.Input, evidence)
-	}
 	if len(recommendations) > s.cfg.MaxRecommendations {
 		recommendations = recommendations[:s.cfg.MaxRecommendations]
 	}
@@ -224,10 +228,25 @@ func (s *jobService) buildAnalyzeResult(ctx context.Context, req dto.AnalyzeJobR
 		}
 	}
 
-	escalationNeeded := confidence < 0.55 || len(recommendations) < min(3, s.cfg.MaxRecommendations)
+	provenanceMode := classifyAnalyzeProvenance(evidence, openAIFillUsed)
+	if provenanceMode == "heuristic_fallback" {
+		confidence = 0.05
+		recommendations = []dto.RecommendationResult{}
+	} else if provenanceMode == "openai_fill" {
+		confidence = math.Min(confidence, 0.45)
+	}
+
+	escalationNeeded := confidence < 0.55 || len(recommendations) < min(3, s.cfg.MaxRecommendations) || provenanceMode == "heuristic_fallback"
 	escalationReason := ""
 	if escalationNeeded {
-		escalationReason = "Search evidence remained incomplete after retries; fallback synthesis was used to maximize payload completeness."
+		switch provenanceMode {
+		case "heuristic_fallback":
+			escalationReason = "No external provider evidence was available after retries; recommendations were filled from backend candidates using heuristic fallback."
+		case "openai_fill":
+			escalationReason = "Search evidence remained incomplete after retries; model-assisted fill was used to complete the payload."
+		default:
+			escalationReason = "Search evidence remained incomplete after retries; fallback synthesis was used to maximize payload completeness."
+		}
 	}
 
 	profileSummary := map[string]interface{}{
@@ -244,13 +263,22 @@ func (s *jobService) buildAnalyzeResult(ctx context.Context, req dto.AnalyzeJobR
 			"budget_usd_per_year":  req.Input.BudgetUsdPerYear,
 			"scholarship_required": req.Input.ScholarshipRequired,
 			"target_intake":        req.Input.TargetIntake,
+			"background_text":      req.Input.BackgroundText,
 		},
 		"search_pipeline": map[string]interface{}{
 			"attempts":          evidence.Attempts,
 			"source_urls":       evidence.URLs,
 			"tinyfish_extracts": evidence.Tinyfish,
 			"coverage":          evidence.Coverage,
-			"openai_fill_used":  s.shouldUseOpenAIFillAnalyze(recommendations, evidence),
+			"openai_fill_used":  openAIFillUsed,
+		},
+		"provenance": map[string]interface{}{
+			"mode":                   provenanceMode,
+			"provider_backed":        provenanceMode == "provider_backed",
+			"external_results_count": len(evidence.Results),
+			"source_url_count":       len(evidence.URLs),
+			"tinyfish_extract_count": len(evidence.Tinyfish),
+			"note":                   buildAnalyzeProvenanceNote(provenanceMode),
 		},
 	}
 
@@ -275,21 +303,45 @@ func (s *jobService) buildCrawlResult(ctx context.Context, req dto.CrawlJobReque
 		buildCrawlTinyfishGoal(name, country),
 	)
 
-	result := s.buildHeuristicCrawlResult(req, evidence, name, country)
+	providerEvidenceFound := hasProviderEvidence(evidence)
+	result := &dto.CrawlResult{
+		Name:            name,
+		Country:         country,
+		CrawlStatus:     "failed",
+		AvailableMajors: []string{},
+		SourceURLs:      evidence.URLs,
+		ChangesDetected: []string{},
+	}
+	if providerEvidenceFound {
+		result = s.buildHeuristicCrawlResult(req, evidence, name, country)
+	}
+	openAIFillUsed := false
 	if s.shouldUseOpenAIFillCrawl(result, evidence) {
 		if filled := s.fillCrawlWithOpenAI(ctx, req, evidence, result); filled != nil {
 			result = mergeCrawlResult(result, filled)
+			openAIFillUsed = true
 		}
 	}
 
 	if result.CrawlStatus == "" {
-		result.CrawlStatus = "ok"
+		if providerEvidenceFound || openAIFillUsed {
+			result.CrawlStatus = "ok"
+		} else {
+			result.CrawlStatus = "failed"
+		}
 	}
 	if len(result.SourceURLs) == 0 {
 		result.SourceURLs = evidence.URLs
 	}
 	if len(result.ChangesDetected) == 0 {
-		result.ChangesDetected = []string{"crawl completed using fallback synthesis to maximize field completeness"}
+		if providerEvidenceFound || openAIFillUsed {
+			result.ChangesDetected = []string{"crawl completed with provider-backed or model-assisted synthesis"}
+		} else {
+			result.ChangesDetected = []string{"crawl failed to collect external evidence and no OpenAI fill was available"}
+		}
+	}
+	if len(result.ChangesDetected) > 0 {
+		result.ChangesDetected = append([]string{buildCrawlProvenanceNote(evidence, openAIFillUsed)}, result.ChangesDetected...)
 	}
 
 	return result, nil
@@ -732,13 +784,24 @@ func (s *jobService) postCallback(ctx context.Context, callbackURL string, paylo
 
 func buildAnalyzeQueries(input dto.AnalyzeInput) []string {
 	countries := strings.Join(input.PreferredCountries, " ")
-	return []string{
+	queries := []string{
 		fmt.Sprintf("%s undergraduate universities %s %s tuition scholarship admissions", input.IntendedMajor, countries, input.TargetIntake),
 		fmt.Sprintf("%s international student admissions %s budget %d", input.IntendedMajor, countries, input.BudgetUsdPerYear),
 		fmt.Sprintf("%s scholarship universities %s IELTS SAT requirement", input.IntendedMajor, countries),
 		fmt.Sprintf("%s top universities %s cost of attendance %s", input.IntendedMajor, countries, input.TargetIntake),
 		fmt.Sprintf("%s universities %s undergraduate requirements financial aid", input.IntendedMajor, countries),
 	}
+
+	if input.BackgroundText != "" {
+		// Add a query specifically using student background keywords (first 100 chars)
+		bgSnippet := input.BackgroundText
+		if len(bgSnippet) > 100 {
+			bgSnippet = bgSnippet[:100]
+		}
+		queries = append(queries, fmt.Sprintf("%s university admissions %s %s", input.IntendedMajor, countries, bgSnippet))
+	}
+
+	return queries
 }
 
 func buildCrawlQueries(name, country string) []string {
@@ -883,18 +946,67 @@ func computeTier(score float64) string {
 
 func computeEvidenceCoverage(evidence searchEvidence) float64 {
 	coverage := 0.0
-	coverage += math.Min(0.45, float64(len(evidence.Attempts))*0.09)
-	coverage += math.Min(0.25, float64(len(evidence.Results))*0.03)
-	coverage += math.Min(0.15, float64(len(evidence.URLs))*0.05)
-	coverage += math.Min(0.15, float64(len(evidence.Tinyfish))*0.05)
+	successfulAttempts := 0
+	for _, attempt := range evidence.Attempts {
+		if attempt.ResultCount > 0 {
+			successfulAttempts++
+		}
+	}
+	coverage += math.Min(0.15, float64(successfulAttempts)*0.03)
+	coverage += math.Min(0.35, float64(len(evidence.Results))*0.04)
+	coverage += math.Min(0.2, float64(len(evidence.URLs))*0.06)
+	coverage += math.Min(0.3, float64(len(evidence.Tinyfish))*0.1)
 	return math.Min(1.0, coverage)
 }
 
 func computeConfidence(coverage float64, recommendationCount, candidateCount int) float64 {
-	confidence := 0.25 + coverage*0.55
+	confidence := 0.1 + coverage*0.75
 	confidence += math.Min(0.1, float64(recommendationCount)*0.02)
 	confidence += math.Min(0.05, float64(candidateCount)*0.005)
 	return math.Min(0.95, confidence)
+}
+
+func hasProviderEvidence(evidence searchEvidence) bool {
+	return len(evidence.Results) > 0 || len(evidence.URLs) > 0 || len(evidence.Tinyfish) > 0
+}
+
+func classifyAnalyzeProvenance(evidence searchEvidence, openAIFillUsed bool) string {
+	if len(evidence.Results) > 0 || len(evidence.URLs) > 0 || len(evidence.Tinyfish) > 0 {
+		if openAIFillUsed {
+			return "provider_plus_openai_fill"
+		}
+		return "provider_backed"
+	}
+	if openAIFillUsed {
+		return "openai_fill"
+	}
+	return "heuristic_fallback"
+}
+
+func buildAnalyzeProvenanceNote(mode string) string {
+	switch mode {
+	case "provider_backed":
+		return "Recommendations were supported by external search/detail evidence."
+	case "provider_plus_openai_fill":
+		return "External evidence was found and remaining gaps were completed with OpenAI fill."
+	case "openai_fill":
+		return "External search did not return enough evidence; OpenAI completed the response."
+	default:
+		return "External providers returned no usable evidence; output was produced from backend candidates using heuristic fallback."
+	}
+}
+
+func buildCrawlProvenanceNote(evidence searchEvidence, openAIFillUsed bool) string {
+	if len(evidence.Results) > 0 || len(evidence.URLs) > 0 || len(evidence.Tinyfish) > 0 {
+		if openAIFillUsed {
+			return "crawl provenance: provider evidence found, then OpenAI filled remaining gaps"
+		}
+		return "crawl provenance: provider-backed result"
+	}
+	if openAIFillUsed {
+		return "crawl provenance: provider evidence missing, OpenAI-filled result"
+	}
+	return "crawl provenance: heuristic fallback with no external evidence"
 }
 
 func buildReason(candidate dto.CandidateUniversity, input dto.AnalyzeInput, evidence searchEvidence) string {

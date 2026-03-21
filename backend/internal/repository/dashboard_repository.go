@@ -34,7 +34,7 @@ func (r *dashboardRepository) GetStats(ctx context.Context) (*dto.DashboardStats
 	`).Scan(&stats.AvgProcessingMinutes)
 
 	r.db.WithContext(ctx).Raw(`
-		SELECT COALESCE(AVG(ai_confidence) * 100, 0)
+		SELECT COALESCE(AVG(ai_confidence), 0)
 		FROM cases
 		WHERE created_at > NOW() - INTERVAL '7 days'
 		  AND ai_confidence IS NOT NULL

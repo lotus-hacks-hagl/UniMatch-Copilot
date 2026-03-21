@@ -17,13 +17,13 @@ services:
       dockerfile: Dockerfile
     image: unimatch-ai-service-local:latest
     container_name: unimatch_ai_service
+    env_file:
+      - ./ai-service-go/.env
     ports:
       - "9000:9000"
     environment:
       - PORT=9000
       - ENV=development
-      - EXA_API_KEY=${EXA_API_KEY}
-      - TINYFISH_API_KEY=${TINYFISH_API_KEY}
       - FALLBACK_ENABLED=true
     restart: unless-stopped
   backend:
@@ -39,6 +39,7 @@ services:
       - DATABASE_URL=postgres://postgres:password@db:5432/unimatch_be?sslmode=disable
       - AI_SERVICE_URL=http://ai-service-go:9000
       - PUBLIC_BASE_URL=http://localhost:8080
+      - INTERNAL_BASE_URL=http://backend:8080
       - ENV=development
     depends_on:
       - db

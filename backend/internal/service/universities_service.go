@@ -94,7 +94,7 @@ func (s *universityService) CrawlAll(ctx context.Context) (int, *apperror.AppErr
 		crawlReq := client.CrawlJobRequest{
 			JobID:        jobID.String(),
 			UniversityID: u.ID.String(),
-			CallbackURL:  s.cfg.PublicBaseURL + "/internal/jobs/done",
+			CallbackURL:  s.cfg.InternalBaseURL + "/internal/jobs/done",
 			Metadata: map[string]interface{}{
 				"name":    u.Name,
 				"country": u.Country,

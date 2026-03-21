@@ -14,6 +14,7 @@ const (
 	EventCrawlChange       = "crawl_change"
 	EventCrawlDone         = "crawl_done"
 	EventReportGenerated   = "report_generated"
+	EventCaseNote          = "case_note"
 )
 
 type ActivityLog struct {

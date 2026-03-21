@@ -1,12 +1,15 @@
 package model
 
 import (
+	"time"
+
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 )
 
 type Student struct {
 	Base
+	DeletedAt              *time.Time     `json:"delete_at,omitempty" gorm:"index"`
 	FullName               string         `json:"full_name" gorm:"not null"`
 	GpaRaw                 float64        `json:"gpa_raw"`
 	GpaScale               float64        `json:"gpa_scale" gorm:"default:10"`
@@ -23,6 +26,7 @@ type Student struct {
 	Extracurriculars       string         `json:"extracurriculars"`
 	Achievements           string         `json:"achievements"`
 	PersonalStatementNotes string         `json:"personal_statement_notes"`
+	BackgroundText         string         `json:"background_text" gorm:"type:text"`
 }
 
 func (Student) TableName() string { return "students" }

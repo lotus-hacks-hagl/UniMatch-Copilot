@@ -10,7 +10,8 @@ const analytics = ref({
   avgScholarship: '—',
   timeSaved: '—',
   satisfaction: '—',
-  placements: []
+  placements: [],
+  topUniversities: []
 })
 const loading = ref(true)
 
@@ -30,15 +31,16 @@ const fetchAnalytics = async () => {
 
       analytics.value = {
         placementRate: data.auto_approval_rate ? data.auto_approval_rate.toFixed(1) + '%' : '—',
-        avgScholarship: '$22,400', // Keep beautiful fallback if BE doesn't provide yet
-        timeSaved: '156 hrs',      // Keep beautiful fallback
-        satisfaction: '4.9/5',     // Keep beautiful fallback
+        avgScholarship: '$22,400', // Beautiful fallback
+        timeSaved: '156 hrs',      // Beautiful fallback
+        satisfaction: '4.9/5',     // Beautiful fallback
         placements: placements.length ? placements : [
           { region: 'United States', percent: 64 },
           { region: 'United Kingdom', percent: 21 },
           { region: 'Canada', percent: 10 },
           { region: 'Australia', percent: 5 }
-        ]
+        ],
+        topUniversities: data.top_universities || []
       }
     }
   } catch (err) {
@@ -118,12 +120,25 @@ onMounted(fetchAnalytics)
             </div>
           </div>
           
-          <div class="card-soft flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-black/5 shadow-none bg-gray-50/50">
-             <div class="w-20 h-20 bg-white rounded-xl shadow-sm border border-black/5 flex items-center justify-center mb-5 rotate-3 hover:rotate-0 transition-transform cursor-pointer">
-              <svg class="w-10 h-10 text-[#a32d2d] opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <div class="card-soft hover:-translate-y-1 transition-transform duration-300">
+             <h3 class="text-[15px] font-bold text-[#18180f] mb-6 flex items-center justify-between">
+               Top Recommended Universities
+               <span class="text-[12px] font-bold text-[#a32d2d] bg-red-50 px-2 py-1 rounded">Real-time</span>
+             </h3>
+             <div class="space-y-4">
+               <div v-for="(uni, i) in analytics.topUniversities.slice(0, 5)" :key="i" class="flex items-center justify-between p-3 rounded-xl hover:bg-[#fafafa] transition-colors border border-transparent hover:border-black/5">
+                 <div class="flex items-center gap-3">
+                   <div class="w-8 h-8 rounded-lg bg-red-50 text-[#a32d2d] flex items-center justify-center font-bold text-[12px] shadow-sm">
+                     {{ i + 1 }}
+                   </div>
+                   <span class="text-[14px] font-bold text-[#18180f]">{{ uni.name }}</span>
+                 </div>
+                 <span class="text-[12px] font-bold text-[#6b6a62] bg-[#f4f5f7] px-2 py-1 rounded-md">{{ uni.count }} matches</span>
+               </div>
+               <div v-if="!analytics.topUniversities.length" class="text-center py-10 opacity-50">
+                 <p class="text-[13px]">No recommendation data yet.</p>
+               </div>
              </div>
-             <h3 class="text-[16px] font-bold text-[#18180f] mb-1">More reports coming soon</h3>
-             <p class="text-[14px] text-[#6b6a62] max-w-sm mx-auto">Our data science team is preparing deeper insight modules including major popularity trendlines.</p>
           </div>
         </div>
       </div>

@@ -12,6 +12,7 @@ type Config struct {
 	DatabaseURL   string
 	AIServiceURL  string
 	PublicBaseURL string
+	InternalBaseURL string
 	Env           string
 	JWTSecret     string
 }
@@ -20,13 +21,15 @@ func Load() *Config {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, reading from environment")
 	}
+	port := getEnv("PORT", "8080")
 	return &Config{
-		Port:          getEnv("PORT", "8080"),
-		DatabaseURL:   mustEnv("DATABASE_URL"),
-		AIServiceURL:  getEnv("AI_SERVICE_URL", "http://localhost:9000"),
-		PublicBaseURL: getEnv("PUBLIC_BASE_URL", "http://localhost:8080"),
-		Env:           getEnv("ENV", "development"),
-		JWTSecret:     getEnv("JWT_SECRET", "super-secret-unimatch-key-change-in-production"),
+		Port:            port,
+		DatabaseURL:     mustEnv("DATABASE_URL"),
+		AIServiceURL:    getEnv("AI_SERVICE_URL", "http://localhost:9000"),
+		PublicBaseURL:   getEnv("PUBLIC_BASE_URL", "http://localhost:"+port),
+		InternalBaseURL: getEnv("INTERNAL_BASE_URL", "http://localhost:"+port),
+		Env:             getEnv("ENV", "development"),
+		JWTSecret:       getEnv("JWT_SECRET", "super-secret-unimatch-key-change-in-production"),
 	}
 }
 

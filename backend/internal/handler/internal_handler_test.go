@@ -55,6 +55,14 @@ func (s *stubCaseService) HandleJobDone(ctx context.Context, payload dto.JobDone
 	return nil
 }
 
+func (s *stubCaseService) AddNote(ctx context.Context, id uuid.UUID, userID *uuid.UUID, text string) *apperror.AppError {
+	return nil
+}
+
+func (s *stubCaseService) ReAnalyze(ctx context.Context, id uuid.UUID) *apperror.AppError {
+	return nil
+}
+
 type stubUniversityService struct {
 	handleCrawlDone func(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
 }

@@ -15,6 +15,17 @@ export const useCasesStore = defineStore('cases', {
     total: 0
   }),
   actions: {
+    normalizeStats(payload) {
+      const data = payload?.data || {}
+      const avgMinutes = Number(data.avgProcessingTime || 0)
+      return {
+        casesToday: Number(data.casesToday || 0),
+        avgProcessingTime: `${Math.round(avgMinutes)}m`,
+        awaitingReview: Number(data.awaitingReview || 0),
+        aiConfidenceAvg: Number(data.aiConfidenceAvg || 0),
+        activeCrawls: Number(data.activeCrawls || 0)
+      }
+    },
     async fetchCases(filterStatus = 'All', assignedTo = null) {
       this.loading = true
       this.filter = filterStatus
@@ -49,7 +60,7 @@ export const useCasesStore = defineStore('cases', {
     async fetchStats() {
       try {
         const response = await api.get('/dashboard/stats')
-        this.stats = response.data
+        this.stats = this.normalizeStats(response.data)
       } catch (error) {
         console.error('Failed to fetch stats', error)
       }
@@ -57,7 +68,7 @@ export const useCasesStore = defineStore('cases', {
     async fetchCasesByDay() {
       try {
         const response = await api.get('/dashboard/cases-by-day')
-        return response.data
+        return response.data?.data || []
       } catch (error) {
         console.error('Failed to fetch cases by day', error)
         return []
@@ -66,7 +77,7 @@ export const useCasesStore = defineStore('cases', {
     async fetchEscalationTrend() {
       try {
         const response = await api.get('/dashboard/escalation-trend')
-        return response.data
+        return response.data?.data || []
       } catch (error) {
         console.error('Failed to fetch escalation trend', error)
         return []
@@ -75,7 +86,7 @@ export const useCasesStore = defineStore('cases', {
     async fetchAnalytics() {
       try {
         const response = await api.get('/dashboard/analytics')
-        return response.data
+        return response.data?.data || null
       } catch (error) {
         console.error('Failed to fetch analytics', error)
         return null

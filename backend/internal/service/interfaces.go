@@ -19,6 +19,8 @@ type CaseService interface {
 	Count(ctx context.Context, status string) (int64, *apperror.AppError)
 	RequestReport(ctx context.Context, caseID uuid.UUID) (*dto.ReportStatusResponse, *apperror.AppError)
 	HandleJobDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
+	AddNote(ctx context.Context, id uuid.UUID, userID *uuid.UUID, text string) *apperror.AppError
+	ReAnalyze(ctx context.Context, id uuid.UUID) *apperror.AppError
 }
 
 type UniversityService interface {
@@ -40,4 +42,14 @@ type DashboardService interface {
 type StudentService interface {
 	List(ctx context.Context, page, limit int) (*dto.ListStudentsResponse, *apperror.AppError)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Student, *apperror.AppError)
+	Update(ctx context.Context, id uuid.UUID, req dto.UpdateStudentRequest) *apperror.AppError
+	Delete(ctx context.Context, id uuid.UUID) *apperror.AppError
+}
+
+type StudentRepository interface {
+	FindAll(ctx context.Context, page, limit int) ([]model.Student, int64, error)
+	Count(ctx context.Context) (int64, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*model.Student, error)
+	Update(ctx context.Context, id uuid.UUID, s *model.Student) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }

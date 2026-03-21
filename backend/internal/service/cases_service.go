@@ -63,6 +63,7 @@ func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*d
 		Extracurriculars:       req.Extracurriculars,
 		Achievements:           req.Achievements,
 		PersonalStatementNotes: req.PersonalStatementNotes,
+		BackgroundText:         req.BackgroundText,
 	}
 
 	if req.IeltsBreakdown != nil {
@@ -128,7 +129,7 @@ func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*d
 	analyzeReq := client.AnalyzeJobRequest{
 		JobID:       jobID.String(),
 		CaseID:      caseRecord.ID.String(),
-		CallbackURL: s.cfg.PublicBaseURL + "/internal/jobs/done",
+		CallbackURL: s.cfg.InternalBaseURL + "/internal/jobs/done",
 		Input: client.AnalyzeInput{
 			FullName:              student.FullName,
 			GpaNormalized:         student.GpaNormalized,
@@ -142,6 +143,7 @@ func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*d
 			ScholarshipRequired:   student.ScholarshipRequired,
 			Extracurriculars:      student.Extracurriculars,
 			Achievements:          student.Achievements,
+			BackgroundText:        student.BackgroundText,
 			CandidateUniversities: candidatePayload,
 		},
 	}
@@ -240,7 +242,7 @@ func (s *caseService) RequestReport(ctx context.Context, caseID uuid.UUID) (*dto
 	reportReq := client.ReportJobRequest{
 		JobID:           jobID.String(),
 		CaseID:          caseID.String(),
-		CallbackURL:     s.cfg.PublicBaseURL + "/internal/jobs/done",
+		CallbackURL:     s.cfg.InternalBaseURL + "/internal/jobs/done",
 		StudentName:     c.Student.FullName,
 		Recommendations: recs,
 	}
@@ -385,5 +387,108 @@ func (s *caseService) handleReportDone(ctx context.Context, p dto.JobDonePayload
 		EventType:   model.EventReportGenerated,
 		Description: "PDF report generated successfully",
 	})
+	return nil
+}
+
+func (s *caseService) AddNote(ctx context.Context, caseID uuid.UUID, userID *uuid.UUID, text string) *apperror.AppError {
+	err := s.db.Create(&model.ActivityLog{
+		CaseID:      &caseID,
+		UserID:      userID,
+		EventType:   model.EventCaseNote,
+		Description: text,
+	}).Error
+	if err != nil {
+		return apperror.Internal(err, "failed to add note")
+	}
+	return nil
+}
+
+func (s *caseService) ReAnalyze(ctx context.Context, caseID uuid.UUID) *apperror.AppError {
+	c, err := s.caseRepo.FindByID(ctx, caseID)
+	if err != nil {
+		return apperror.Internal(err, "failed to get case")
+	}
+	if c == nil {
+		return apperror.NotFound("case not found")
+	}
+
+	// 1. Clear recommendations
+	s.db.WithContext(ctx).Where("case_id = ?", caseID).Delete(&model.Recommendation{})
+
+	// 2. Clear profile summary
+	s.db.WithContext(ctx).Model(&model.Case{}).Where("id = ?", caseID).Updates(map[string]interface{}{
+		"profile_summary": datatypes.JSON([]byte("{}")),
+		"status":          model.CaseStatusPending,
+	})
+
+	// 3. Re-load candidates
+	candidates, err := s.uniRepo.FindAnalyzeCandidates(
+		ctx,
+		[]string(c.Student.PreferredCountries),
+		c.Student.IntendedMajor,
+		c.Student.BudgetUsdPerYear,
+		24,
+	)
+	if err != nil {
+		return apperror.Internal(err, "failed to load university candidates")
+	}
+
+	candidatePayload := make([]client.CandidateUniversity, 0, len(candidates))
+	for _, u := range candidates {
+		candidatePayload = append(candidatePayload, client.CandidateUniversity{
+			UniversityID:             u.ID.String(),
+			UniversityName:           u.Name,
+			Country:                  u.Country,
+			QsRank:                   u.QsRank,
+			IeltsMin:                 u.IeltsMin,
+			SatRequired:              u.SatRequired,
+			GpaExpectationNormalized: u.GpaExpectationNormalized,
+			TuitionUsdPerYear:        u.TuitionUsdPerYear,
+			ScholarshipAvailable:     u.ScholarshipAvailable,
+			AvailableMajors:          []string(u.AvailableMajors),
+			AcceptanceRate:           u.AcceptanceRate,
+		})
+	}
+
+	// 4. Re-trigger analysis
+	jobID := uuid.New()
+	analyzeReq := client.AnalyzeJobRequest{
+		JobID:       jobID.String(),
+		CaseID:      caseID.String(),
+		CallbackURL: s.cfg.InternalBaseURL + "/internal/jobs/done",
+		Input: client.AnalyzeInput{
+			FullName:              c.Student.FullName,
+			GpaNormalized:         c.Student.GpaNormalized,
+			IeltsOverall:          c.Student.IeltsOverall,
+			SatTotal:              c.Student.SatTotal,
+			ToeflTotal:            c.Student.ToeflTotal,
+			IntendedMajor:         c.Student.IntendedMajor,
+			BudgetUsdPerYear:      c.Student.BudgetUsdPerYear,
+			PreferredCountries:    []string(c.Student.PreferredCountries),
+			TargetIntake:          c.Student.TargetIntake,
+			ScholarshipRequired:   c.Student.ScholarshipRequired,
+			Extracurriculars:      c.Student.Extracurriculars,
+			Achievements:          c.Student.Achievements,
+			BackgroundText:        c.Student.BackgroundText,
+			CandidateUniversities: candidatePayload,
+		},
+	}
+
+	if err := s.aiClient.SubmitAnalyzeJob(analyzeReq); err != nil {
+		return apperror.ServiceUnavailable("AI service unavailable")
+	}
+
+	// 5. Update status and log
+	now := time.Now()
+	s.db.Model(&c).Updates(map[string]interface{}{
+		"status":                model.CaseStatusProcessing,
+		"processing_started_at": &now,
+	})
+	s.db.Create(&model.ActivityLog{
+		CaseID:      &caseID,
+		EventType:   model.EventProcessingStarted,
+		Description: "Re-analysis triggered by user",
+	})
+
 	return nil
 }
