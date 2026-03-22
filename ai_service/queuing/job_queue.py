@@ -33,7 +33,7 @@ def make_worker_loop(job_type: str, process_fn):
                 from workers.callback import callback_be
                 job_id = job.get("job_id")
                 if job_id:
-                    update_job(job_id, "failed", error=str(e))
+                    await update_job(job_id, "failed", error=str(e))
 
                 await callback_be(job.get("callback_url"), job_id,
                                   job_type, "failed", error=str(e),

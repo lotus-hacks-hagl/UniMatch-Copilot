@@ -47,7 +47,7 @@ async def process_analyze_job(job: dict):
     input_data = job["input"]
     job_id = job["job_id"]
 
-    update_job(job_id, "processing")
+    await update_job(job_id, "processing")
 
     all_unis = await get_all_universities_flat()
     filtered = _hard_filter(all_unis, input_data)
@@ -75,7 +75,7 @@ async def process_analyze_job(job: dict):
                 "Missing callback_url for analyze job_id=%s; skipping done callback",
                 job_id,
             )
-        update_job(job_id, "done")
+        await update_job(job_id, "done")
         return
 
     with open("prompts/analyze.txt") as f:
@@ -173,7 +173,7 @@ async def process_analyze_job(job: dict):
             case_id=case_id,
             result=result,
         )
-    update_job(job_id, "done", result=result)
+    await update_job(job_id, "done", result=result)
 
 
 analyze_worker_loop = make_worker_loop("analyze_profile", process_analyze_job)
