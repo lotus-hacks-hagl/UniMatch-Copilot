@@ -18,7 +18,7 @@ class JobRecord(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-engine = create_async_engine(config.JOB_DATABASE_URL)
+engine = create_async_engine(config.JOB_DATABASE_URL, connect_args={"statement_cache_size": 0})
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, autoflush=False, autocommit=False)
 
 async def init_db():
