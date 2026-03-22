@@ -33,6 +33,7 @@
     "updateFailed": "Update failed",
     "claimFailed": "Failed to claim case",
     "caseClaimed": "Case claimed successfully!",
+    "exportComingSoon": "Export is coming soon",
     "summaryUpdated": "Summary updated!",
     "reportTriggered": "Report generation triggered.",
     "reportFailed": "Failed to trigger report.",

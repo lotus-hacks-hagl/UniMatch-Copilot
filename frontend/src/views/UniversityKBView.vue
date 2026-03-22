@@ -15,6 +15,7 @@ const dialog = useDialog()
 const showModal = ref(false)
 const isEditing = ref(false)
 const editingId = ref(null)
+const searchTerm = ref('')
 const pagination = ref({
   page: 1,
   limit: 10,
@@ -78,6 +79,15 @@ const fetchUniversities = async (page = 1) => {
 }
 
 onMounted(fetchUniversities)
+
+const filteredKbs = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase()
+  if (!term) return kbs.value
+  return (kbs.value || []).filter((u) => {
+    const hay = [u.name, u.location].filter(Boolean).join(' ').toLowerCase()
+    return hay.includes(term)
+  })
+})
 
 const addUniversity = async () => {
   try {
@@ -151,7 +161,7 @@ const runSync = async () => {
       </div>
       <div class="flex items-center gap-4">
         <div class="relative shadow-sm hover-elevate rounded-lg">
-          <input type="text" :placeholder="$t('universityKb.search')" class="pl-9 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-lg w-[260px] transition-all" />
+          <input v-model="searchTerm" type="text" :placeholder="$t('universityKb.search')" class="pl-9 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-lg w-[260px] transition-all" />
           <svg class="w-4 h-4 text-[#a8a79d] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
         <button @click="runSync" data-testid="university-sync" class="btn-outline">
@@ -172,12 +182,12 @@ const runSync = async () => {
           <div class="text-[14px] font-medium text-[#6b6a62]">{{ $t('universityKb.loading') }}</div>
         </div>
         
-        <div v-else-if="kbs.length === 0" class="flex-1 flex flex-col items-center justify-center text-center p-12">
+        <div v-else-if="filteredKbs.length === 0" class="flex-1 flex flex-col items-center justify-center text-center p-12">
            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
             <svg class="w-10 h-10 text-[#a8a79d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
           </div>
-          <h3 class="text-[16px] font-bold text-[#18180f] mb-1">No universities available</h3>
-          <p class="text-[14px] text-[#6b6a62]">Run a sync or manually add your first university institution.</p>
+          <h3 class="text-[16px] font-bold text-[#18180f] mb-1">{{ searchTerm ? 'No results' : 'No universities available' }}</h3>
+          <p class="text-[14px] text-[#6b6a62]">{{ searchTerm ? 'Try a different keyword.' : 'Run a sync or manually add your first university institution.' }}</p>
         </div>
 
         <div v-else class="flex-1 flex flex-col">
@@ -194,7 +204,7 @@ const runSync = async () => {
                 </tr>
               </thead>
               <TransitionGroup name="list" tag="tbody" class="divide-y divide-black/5 text-[14px]">
-                <tr v-for="kb in kbs" :key="kb.id" class="hover:bg-gray-50/80 transition-colors cursor-pointer group">
+                <tr v-for="kb in filteredKbs" :key="kb.id" class="hover:bg-gray-50/80 transition-colors cursor-pointer group">
                   <td class="px-6 py-4 min-w-[100px]">
                     <div v-if="kb.rank !== '-'" class="w-10 h-10 rounded-full bg-[#f4f5f7] text-[#18180f] font-bold flex items-center justify-center border border-black/5">#{{ kb.rank }}</div>
                     <div v-else class="w-10 h-10 rounded-full bg-gray-50 text-[#8a8980] font-bold flex items-center justify-center border border-black/5">-</div>

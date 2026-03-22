@@ -4,12 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQueueStore } from '../stores/queueStore'
 import { useAuthStore } from '../stores/authStore'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const queueStore = useQueueStore()
 const authStore = useAuthStore()
 const { t, locale } = useI18n()
+const toast = useToast()
 
 let syncInterval = null
 
@@ -74,6 +76,10 @@ const toggleLanguage = () => {
 const handleLogout = () => {
   authStore.logout()
   router.push('/auth')
+}
+
+const handleExport = () => {
+  toast.addToast(t('dialogs.exportComingSoon'), 'info')
 }
 </script>
 
@@ -157,7 +163,7 @@ const handleLogout = () => {
             {{ t('nav.syncing', { count: queueStore.syncCount }) }}
           </div>
 
-          <button class="px-4 py-2 bg-white rounded-lg text-[13px] font-medium border border-black/10 hover:bg-gray-50 hover:shadow-sm hover:-translate-y-0.5 transition-all text-[#18180f] flex items-center gap-2">
+          <button @click="handleExport" class="px-4 py-2 bg-white rounded-lg text-[13px] font-medium border border-black/10 hover:bg-gray-50 hover:shadow-sm hover:-translate-y-0.5 transition-all text-[#18180f] flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
             {{ t('nav.export') }}
           </button>

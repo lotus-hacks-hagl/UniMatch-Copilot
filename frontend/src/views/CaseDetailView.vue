@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { usePolling } from '../composables/usePolling'
@@ -9,6 +9,7 @@ import { formatFloat2 } from '../utils/number'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/authStore'
 import { useCasesStore } from '../stores/casesStore'
+import ComingSoonPanel from '../components/ComingSoonPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,9 @@ const caseData = ref(null)
 const loading = ref(true)
 const activeTab = ref('profile')
 const editedSummary = ref('')
+const activityLogs = ref([])
+const activityLoading = ref(false)
+const noteSubmitting = ref(false)
 
 const tabs = computed(() => {
   const baseTabs = ['profile', 'aiAnalysis', 'documents', 'communication']
@@ -83,6 +87,13 @@ onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer)
 })
 
+watch(activeTab, (v) => {
+  if (v === 'communication') {
+    fetchActivity()
+  }
+})
+
+
 const getAvatar = (name) => {
   if (!name) return '??'
   const parts = name.split(' ')
@@ -127,20 +138,50 @@ const generateReport = async () => {
   }
 }
 
+const fetchActivity = async () => {
+  activityLoading.value = true
+  try {
+    const res = await api.get(`/cases/${route.params.id}/activity`, { params: { page: 1, limit: 50 } })
+    if (res.data?.success) {
+      activityLogs.value = res.data.data || []
+    }
+  } catch (err) {
+    console.error('Fetch activity failed', err)
+  } finally {
+    activityLoading.value = false
+  }
+}
+
 const noteText = ref('')
-const isAddingNote = ref(false)
 const addNote = async () => {
   if (!noteText.value.trim()) return
-  isAddingNote.value = true
+  noteSubmitting.value = true
   try {
     await api.post(`/cases/${route.params.id}/notes`, { text: noteText.value })
     noteText.value = ''
-    await fetchCase()
+    await fetchActivity()
   } catch (err) {
     toast.addToast(t('dialogs.noteFailed'), 'error')
   } finally {
-    isAddingNote.value = false
+    noteSubmitting.value = false
   }
+}
+
+const downloadReportPdf = () => {
+  const rd = caseData.value?.report_data
+  if (!rd?.pdf_content) return
+  const bytes = atob(rd.pdf_content)
+  const arr = new Uint8Array(bytes.length)
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i)
+  const blob = new Blob([arr], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `case_${route.params.id}_report.pdf`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 const isReAnalyzing = ref(false)
@@ -398,31 +439,28 @@ const reAnalyze = async () => {
 
                 <!-- Documents Tab -->
                 <div v-else-if="activeTab === 'documents'" key="documents" class="space-y-6">
-                  <div class="bg-white p-8 rounded-[20px] shadow-sm border border-black/5">
-                    <h3 class="text-lg font-bold text-[#18180f] mb-6">Contract & Documents</h3>
-                    <div class="space-y-4">
-                      <div class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-red-600 shadow-sm font-bold">PDF</div>
-                          <div>
-                            <div class="text-[14px] font-bold text-[#18180f]">Student_Contract_v1.pdf</div>
-                            <div class="text-[12px] text-[#6b6a62]">Uploaded Mar 21, 2026</div>
-                          </div>
-                        </div>
-                        <button class="text-[#a32d2d] font-bold text-[13px] hover:underline">Download</button>
-                      </div>
-                      <div class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm font-bold">DOC</div>
-                          <div>
-                            <div class="text-[14px] font-bold text-[#18180f]">Transcript_Official.docx</div>
-                            <div class="text-[12px] text-[#6b6a62]">Uploaded Mar 21, 2026</div>
-                          </div>
-                        </div>
-                        <button class="text-[#a32d2d] font-bold text-[13px] hover:underline">Download</button>
+                  <div class="bg-white p-8 rounded-[20px] shadow-sm border border-black/5 space-y-6">
+                    <div class="flex items-center justify-between">
+                      <h3 class="text-lg font-bold text-[#18180f]">Documents</h3>
+                      <div class="flex gap-2">
+                        <button v-if="caseData.report_data?.pdf_content" class="btn-outline" @click="downloadReportPdf">Download report</button>
+                        <button v-else class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]" @click="generateReport">Generate report</button>
                       </div>
                     </div>
+
+                    <div v-if="caseData.report_data" class="space-y-3">
+                      <div class="text-[12px] font-bold text-[#6b6a62]">Summary</div>
+                      <div class="text-[14px] text-[#18180f] leading-relaxed whitespace-pre-wrap">
+                        {{ caseData.report_data.summary || '—' }}
+                      </div>
+                    </div>
+                    <div v-else class="text-[14px] text-[#6b6a62]">No report generated yet.</div>
                   </div>
+
+                  <ComingSoonPanel
+                    title="Contract uploads"
+                    description="Uploading and managing contracts/transcripts will be added soon."
+                  />
                 </div>
 
                 <!-- Communication Tab -->
@@ -432,7 +470,7 @@ const reAnalyze = async () => {
                     
                     <!-- Notes Feed -->
                     <div class="flex-1 space-y-6 mb-8 overflow-y-auto max-h-[400px] pr-2">
-                      <div v-for="log in (caseData.activity_logs || []).slice().reverse()" :key="log.id" class="flex gap-4">
+                      <div v-for="log in activityLogs.slice().reverse()" :key="log.id" class="flex gap-4">
                         <div class="w-10 h-10 rounded-full bg-[#f4f5f7] border border-black/5 flex items-center justify-center shrink-0 font-bold text-[13px]">
                           {{ getAvatar(log.user?.username || 'System') }}
                         </div>
@@ -442,11 +480,14 @@ const reAnalyze = async () => {
                             <span class="text-[11px] text-[#6b6a62]">{{ new Date(log.created_at).toLocaleString() }}</span>
                           </div>
                           <div class="text-[14px] text-[#6b6a62] p-4 bg-[#fafafa] rounded-2xl rounded-tl-none border border-black/5 leading-relaxed">
-                            {{ log.event_type === 'case_note' ? log.details : (log.event_type.replaceAll('_', ' ') + ': ' + log.details) }}
+                            {{ log.description }}
                           </div>
                         </div>
                       </div>
-                      <div v-if="!caseData.activity_logs?.length" class="text-center py-20 opacity-50">
+                      <div v-if="activityLoading" class="text-center py-20 opacity-50">
+                        <p class="text-[14px]">Loading...</p>
+                      </div>
+                      <div v-else-if="!activityLogs.length" class="text-center py-20 opacity-50">
                         <p class="text-[14px]">No activity recorded yet.</p>
                       </div>
                     </div>
@@ -460,10 +501,10 @@ const reAnalyze = async () => {
                       ></textarea>
                       <button 
                         @click="addNote"
-                        :disabled="!noteText.trim() || isAddingNote"
+                        :disabled="!noteText.trim() || noteSubmitting"
                         class="absolute bottom-4 right-4 btn-primary px-6 h-10 flex items-center justify-center shadow-lg disabled:opacity-50"
                       >
-                        {{ isAddingNote ? 'Saving...' : 'Post Note' }}
+                        {{ noteSubmitting ? 'Saving...' : 'Post Note' }}
                       </button>
                     </div>
                   </div>

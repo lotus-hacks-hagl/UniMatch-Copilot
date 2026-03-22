@@ -19,6 +19,25 @@ const authStore = useAuthStore()
 const { cases, stats, filter: activeFilter } = storeToRefs(casesStore)
 const { t } = useI18n()
 const toast = useToast()
+const searchTerm = ref('')
+
+const filteredCases = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase()
+  if (!term) return cases.value
+  return (cases.value || []).filter((c) => {
+    const s = c.student || {}
+    const hay = [
+      s.full_name,
+      s.intended_major,
+      s.target_intake,
+      s.preferred_countries ? s.preferred_countries.join(' ') : ''
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    return hay.includes(term)
+  })
+})
 
 const filters = ['All cases', 'Done', 'Processing', 'Human review']
 
@@ -68,6 +87,10 @@ const lineChartOptions = {
 
 const changeFilter = (f) => {
   casesStore.fetchCases(f)
+}
+
+const showFilterComingSoon = () => {
+  toast.addToast('Advanced filters coming soon', 'info')
 }
 
 const getStatusClass = (statusStr) => {
@@ -228,10 +251,10 @@ onMounted(async () => {
       </div>
       <div class="flex items-center gap-3">
         <div class="relative shadow-sm rounded-lg">
-          <input type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-10 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-xl w-[280px] transition-all" />
+          <input v-model="searchTerm" type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-10 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-xl w-[280px] transition-all" />
           <svg class="w-4 h-4 text-[#a8a79d] absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
-        <button class="p-2.5 bg-white rounded-xl text-[#6b6a62] border border-black/10 shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-all outline-none focus:ring-2 focus:ring-[#a32d2d]/10">
+        <button @click="showFilterComingSoon" class="p-2.5 bg-white rounded-xl text-[#6b6a62] border border-black/10 shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-all outline-none focus:ring-2 focus:ring-[#a32d2d]/10">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
         </button>
       </div>
@@ -246,7 +269,7 @@ onMounted(async () => {
           <div class="w-8 h-8 border-4 border-red-100 border-t-[#a32d2d] rounded-full animate-spin"></div>
         </div>
         
-        <table v-else-if="cases.length > 0" class="w-full text-left border-collapse">
+        <table v-else-if="filteredCases.length > 0" class="w-full text-left border-collapse">
           <thead>
             <tr class="text-[12px] text-[#8a8980] uppercase tracking-wider border-b border-black/5 bg-[#fafafa]">
               <th class="px-6 py-4 font-bold">{{ $t('cases.table.student') }}</th>
@@ -258,7 +281,7 @@ onMounted(async () => {
           </thead>
           <tbody class="divide-y divide-black/5 text-[14px]">
             <tr 
-              v-for="c in cases" 
+              v-for="c in filteredCases" 
               :key="c.id"
               @click="router.push('/cases/' + c.id)"
               class="hover:bg-gray-50 transition-colors group cursor-pointer"
