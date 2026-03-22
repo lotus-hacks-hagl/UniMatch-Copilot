@@ -125,7 +125,7 @@ class AnalyzeJobRequest(BaseModel):
         default_factory=lambda: str(uuid.uuid4()),
     )
     case_id: str
-    callback_url: str
+    callback_url: str = ""
     input: AnalyzeInput
 
 class ProfileSummary(BaseModel):

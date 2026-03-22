@@ -9,7 +9,6 @@ UNIVERSITIES:
 INSTRUCTIONS:
 1. Examine the provided Universities from the internal database.
 2. IMPORTANT: You have access to the Knowledge Graph via Neo4j MCP. Use `mcp__neo4j__get_neo4j_schema` or `mcp__neo4j__read_neo4j_cypher` to query deeper relationships (like AdmissionReq, Program details, Scholarships) not fully present in the base JSON.
-3. IMPORTANT: If external web research is genuinely necessary, use the `tinyfish-web-agent` skill and its local helper script `.claude/skills/tinyfish-web-agent/scripts/extract.sh` against official university pages. Keep TinyFish calls focused on one URL per extraction.
 4. Calculate admission_likelihood_score (0-100) and student_fit_score (0-100) for each university based on database logic, Neo4j Graph relations, and online research.
 5. Categorize each into tier: "safe", "match", or "reach".
 6. Identify strengths, weaknesses from the student profile.

@@ -141,7 +141,7 @@ async def process_analyze_job(job: dict):
                 logger.info("UserMessage: %s", message)
             if isinstance(message, ResultMessage):
                 logger.info("Received ResultMessage from agent: %s", message)
-                agent_result = message.structured_output
+                agent_result = message.structured_output or message.result
     except Exception as e:
         logger.error(f"Claude Agent failed: {e}")
         raise
