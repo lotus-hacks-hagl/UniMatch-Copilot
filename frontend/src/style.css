@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg text-text antialiased;
+  }
+}
+
+@layer components {
+  /* Global Components for Comprehensive Redesign */
+  .card-soft {
+    @apply bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/[0.03];
+  }
+  
+  .hover-elevate {
+    @apply hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg text-[13px] font-bold border border-[#a32d2d] bg-[#a32d2d] text-white hover:bg-[#8B0000] hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 bg-white rounded-lg text-[13px] font-medium border border-black/10 hover:bg-gray-50 hover:shadow-sm hover:-translate-y-0.5 transition-all text-[#18180f] flex items-center justify-center gap-2;
+  }
+  
+  .red-pill {
+    @apply px-3 py-1 bg-red-50 text-[#a32d2d] text-[11px] font-bold rounded-full;
+  }
+}
+
+/* Global Vue Transitions */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.4s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(15px);
+}
+.list-leave-active {
+  position: absolute;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

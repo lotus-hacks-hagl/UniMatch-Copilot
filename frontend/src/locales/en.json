@@ -1,0 +1,191 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "students": "Students",
+    "cases": "Cases",
+    "reviews": "Review Queue",
+    "analytics": "Analytics",
+    "kb": "University",
+    "settings": "Settings",
+    "search": "Search...",
+    "language": "Language",
+    "export": "Export",
+    "newCase": "New case"
+  },
+  "nav": {
+    "cases": "Case overview",
+    "students": "All students",
+    "adminTeachers": "Teacher Management",
+    "reviewQueue": "Review Queue",
+    "universities": "University",
+    "analytics": "Analytics",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "newCase": "New Case",
+    "caseDetail": "Case Detail",
+    "export": "Export",
+    "syncing": "Syncing {count} universities"
+  },
+  "caseDetail": {
+    "loading": "Loading case details...",
+    "student": "Student",
+    "aiMatchVerdict": "AI Match Verdict",
+    "escalatedReview": "Escalated to human review due to unhandled edge cases.",
+    "autoApproved": "Auto-approved profile based on historical admits.",
+    "gpaNorm": "GPA (Norm)",
+    "ielts": "IELTS",
+    "budget": "Budget",
+    "noBudget": "No budget",
+    "intake": "Intake",
+    "countries": "Countries",
+    "any": "Any",
+    "strengths": "Strengths",
+    "risks": "Risks",
+    "generateReport": "Generate PDF Report",
+    "tabs": {
+      "profile": "Profile",
+      "aiAnalysis": "AI Analysis",
+      "documents": "Documents",
+      "communication": "Communication",
+      "reportEditor": "Report Editor"
+    },
+    "fullBackground": "Full Student Background",
+    "extracurriculars": "Extracurriculars",
+    "achievements": "Achievements",
+    "noneRecorded": "None recorded",
+    "aiAnalyzing": "AI is analyzing profile and sourcing universities...",
+    "noRecommendations": "No recommendations generated for this case.",
+    "likelihood": "Likelihood",
+    "fit": "Fit",
+    "rank": "Rank",
+    "underConstruction": "Section Under Construction"
+  },
+  "analytics": {
+    "title": "Counselor Analytics",
+    "loading": "Loading analytics...",
+    "placementRate": "Placement Rate",
+    "avgScholarship": "Avg Scholarship",
+    "timeSaved": "Time Saved by AI",
+    "clientSatisfaction": "Client Satisfaction",
+    "placementsByRegion": "Placements by Region"
+  },
+  "cases": {
+    "filters": {
+      "All cases": "All cases",
+      "Done": "Done",
+      "Processing": "Processing",
+      "Human review": "Human review"
+    },
+    "casesToday": "Cases today",
+    "avgProcessing": "Avg processing",
+    "awaitingReview": "Awaiting review",
+    "aiConfidence": "AI Confidence",
+    "searchPlaceholder": "Search cases...",
+    "loading": "Loading cases...",
+    "table": {
+      "student": "Student",
+      "profile": "Profile",
+      "target": "Target",
+      "aiMatch": "AI Match",
+      "confidence": "Confidence",
+      "status": "Status"
+    },
+    "tiers": {
+      "safe": "Safe",
+      "match": "Match",
+      "reach": "Reach"
+    },
+    "pendingAi": "Pending AI",
+    "noCases": "No cases found matching the criteria.",
+    "charts": {
+      "casesPerDay": "Cases per day",
+      "matchTierDist": "Match tier distribution",
+      "escalationRate": "Escalation rate trend"
+    },
+    "noBudget": "No budget",
+    "unknown": "Unknown",
+    "m": "m",
+    "h": "h",
+    "d": "d",
+    "ago": "ago"
+  },
+  "reviewQueue": {
+    "title": "Review Queue",
+    "subtitle": "Cases flagged by AI needing human escalation.",
+    "loading": "Loading queue...",
+    "empty": "Queue is empty!",
+    "cleared": "All escalated cases have been cleared.",
+    "caseId": "Case ID:",
+    "escalationReason": "Escalation Reason",
+    "defaultReason": "AI failed to determine definite matching strategy.",
+    "slaDeadline": "SLA Deadline",
+    "reviewCase": "Review Case",
+    "overdue": "Overdue",
+    "timeLeft": "{hrs}h {mins}m left"
+  },
+  "universityKb": {
+    "title": "University Knowledge Base",
+    "subtitle": "Explore and filter {count} synced global universities.",
+    "search": "Search universities...",
+    "sync": "Sync",
+    "add": "Add University",
+    "loading": "Loading DB...",
+    "table": {
+      "rank": "Global Rank",
+      "institution": "Institution",
+      "location": "Location",
+      "acceptance": "Acceptance Rate",
+      "tuition": "Tuition (Est.)"
+    },
+    "modal": {
+      "title": "Add University",
+      "editTitle": "Edit University",
+      "name": "Institution Name",
+      "location": "Location",
+      "rank": "Global Rank",
+      "acceptance": "Acceptance Rate",
+      "tuition": "Tuition (Est.)",
+      "cancel": "Cancel",
+      "save": "Save University",
+      "update": "Update University"
+    },
+    "toasts": {
+      "addSuccess": "University added successfully",
+      "addFail": "Failed to add university",
+      "syncSuccess": "TinyFish crawl started in background",
+      "syncFail": "Failed to trigger Sync",
+      "updateSuccess": "University updated successfully",
+      "updateFail": "Failed to update university",
+      "deleteSuccess": "University deleted successfully",
+      "deleteFail": "Failed to delete university"
+    },
+    "confirmDelete": "Are you sure you want to delete this university? This action cannot be undone."
+  },
+  "students": {
+    "title": "All Students",
+    "subtitle": "Management of student academic profiles and target intake.",
+    "noData": "No students found.",
+    "name": "Name",
+    "targetIntake": "Target Intake",
+    "gpa": "GPA",
+    "testScores": "Test Scores",
+    "budget": "Budget"
+  },
+  "auth": {
+    "loginTitle": "Login to UniMatch",
+    "registerTitle": "Join UniMatch",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "signIn": "Sign In",
+    "createAccount": "Create Account",
+    "processing": "Processing...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "usernameTooShort": "Username must be at least 3 characters"
+    }
+  }
+}

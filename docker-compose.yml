@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:15
+    container_name: unimatch_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: unimatch_be
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+  ai-service-go:
+    build:
+      context: ./ai-service-go
+      dockerfile: Dockerfile
+    image: unimatch-ai-service-local:latest
+    container_name: unimatch_ai_service
+    env_file:
+      - ./ai-service-go/.env
+    ports:
+      - "8895:8895"
+    environment:
+      - PORT=8895
+      - ENV=development
+      - FALLBACK_ENABLED=true
+    restart: unless-stopped
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: unimatch-backend-local:latest
+    container_name: unimatch_backend
+    ports:
+      - "8894:8894"
+    environment:
+      - PORT=8894
+      - DATABASE_URL=postgres://postgres:password@db:5432/unimatch_be?sslmode=disable
+      - AI_SERVICE_URL=http://ai-service-go:8895
+      - PUBLIC_BASE_URL=http://localhost:8894
+      - INTERNAL_BASE_URL=http://backend:8894
+      - ENV=development
+    depends_on:
+      - db
+      - ai-service-go
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: unimatch-frontend-local:latest
+    container_name: unimatch_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
