@@ -6,12 +6,14 @@ import { usePolling } from '../composables/usePolling'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/authStore'
 import { useCasesStore } from '../stores/casesStore'
+import { useConfirm } from '../composables/useConfirm'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const casesStore = useCasesStore()
+const { confirm } = useConfirm()
 
 const caseData = ref(null)
 const loading = ref(true)
@@ -181,7 +183,13 @@ const formatFileSize = (bytes) => {
 
 const isReAnalyzing = ref(false)
 const reAnalyze = async () => {
-  if (!confirm('This will clear current recommendations and trigger a new AI analysis. Continue?')) return
+  const ok = await confirm({
+    title: 'Re-analyze Case?',
+    message: 'This will clear current recommendations and trigger a new AI analysis based on the latest student profile.',
+    type: 'warning',
+    confirmLabel: 'Start Analysis'
+  })
+  if (!ok) return
   isReAnalyzing.value = true
   try {
     await api.post(`/cases/${route.params.id}/analyze`)
@@ -375,7 +383,7 @@ const downloadSummary = () => {
                   <span class="w-2 h-2 rounded-full bg-[#2e7d32] animate-pulse"></span>
                   <span class="font-bold text-[#18180f]">Assigned to {{ caseData.assigned_to.username }}</span>
                 </div>
-                
+                <button @click="generateReport" class="btn-outline w-full hover:-translate-y-0.5">
                   {{ $t('caseDetail.generateReport') }}
                 </button>
                 <button @click="downloadSummary" class="btn-outline w-full hover:-translate-y-0.5">
@@ -391,14 +399,14 @@ const downloadSummary = () => {
             
             <div class="flex border-b border-black/5 px-6 pt-2 overflow-x-auto">
                 <button 
-                  v-for="t in tabs" 
-                  :key="t"
-                  @click="activeTab = t"
-                  :data-testid="`case-tab-${t}`"
+                  v-for="tab in tabs" 
+                  :key="tab"
+                  @click="activeTab = tab"
+                  :data-testid="`case-tab-${tab}`"
                   class="px-5 py-4 text-[14px] font-bold border-b-[3px] transition-colors whitespace-nowrap"
-                  :class="activeTab === t ? 'border-[#a32d2d] text-[#a32d2d]' : 'border-transparent text-[#6b6a62] hover:text-[#18180f]'"
+                  :class="activeTab === tab ? 'border-[#a32d2d] text-[#a32d2d]' : 'border-transparent text-[#6b6a62] hover:text-[#18180f]'"
                 >
-                {{ $t('caseDetail.tabs.' + t) }}
+                {{ $t('caseDetail.tabs.' + tab) }}
               </button>
             </div>
 

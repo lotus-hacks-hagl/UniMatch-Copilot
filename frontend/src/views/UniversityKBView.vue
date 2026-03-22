@@ -105,7 +105,14 @@ const runSync = async () => {
 }
 
 const deleteUniversity = async (id) => {
-  if (!confirm('Are you sure you want to delete this university? This will also remove it from the AI Knowledge Graph.')) return
+  const ok = await confirm({
+    title: 'Delete Institution?',
+    message: 'This will also remove it from the AI Knowledge Graph. This action cannot be undone.',
+    type: 'danger',
+    confirmLabel: 'Delete'
+  })
+  if (!ok) return
+  
   try {
     await api.delete(`/universities/${id}`)
     toast.addToast('University deleted successfully', 'success')
