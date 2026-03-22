@@ -22,6 +22,7 @@ type CaseService interface {
 	HandleJobDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
 	AddNote(ctx context.Context, id uuid.UUID, userID *uuid.UUID, text string) *apperror.AppError
 	ReAnalyze(ctx context.Context, id uuid.UUID) *apperror.AppError
+	Delete(ctx context.Context, id uuid.UUID) *apperror.AppError
 }
 
 type UniversityService interface {

@@ -184,6 +184,10 @@ func (s *universityService) HandleCrawlDone(ctx context.Context, p dto.JobDonePa
 		return apperror.BadRequest("invalid university_id in callback")
 	}
 
+	if p.Status == "changed" {
+		p.Status = "ok"
+	}
+
 	if p.Status == "failed" {
 		s.uniRepo.UpdateCrawlResult(ctx, uniID, map[string]interface{}{
 			"crawl_status": model.CrawlStatusFailed,

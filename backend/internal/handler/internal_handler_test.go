@@ -63,6 +63,10 @@ func (s *stubCaseService) ReAnalyze(ctx context.Context, id uuid.UUID) *apperror
 	return nil
 }
 
+func (s *stubCaseService) Delete(ctx context.Context, id uuid.UUID) *apperror.AppError {
+	return nil
+}
+
 type stubUniversityService struct {
 	handleCrawlDone func(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
 }

@@ -436,3 +436,11 @@ func (s *caseService) ReAnalyze(ctx context.Context, caseID uuid.UUID) *apperror
 
 	return nil
 }
+
+func (s *caseService) Delete(ctx context.Context, id uuid.UUID) *apperror.AppError {
+	err := s.caseRepo.Delete(ctx, id)
+	if err != nil {
+		return apperror.Internal(err, "failed to delete case")
+	}
+	return nil
+}

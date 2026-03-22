@@ -279,3 +279,31 @@ func (h *CasesHandler) ReAnalyze(c *gin.Context) {
 
 	response.OK(c, nil)
 }
+
+// Delete godoc
+// @Summary Delete a case
+// @Description Soft delete a case by UUID (Protected)
+// @Tags cases
+// @Produce json
+// @Param id path string true "Case UUID"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 404 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
+// @Router /cases/{id} [delete]
+func (h *CasesHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid case id")
+		return
+	}
+
+	appErr := h.svc.Delete(c.Request.Context(), id)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, nil)
+}

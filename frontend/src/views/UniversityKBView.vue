@@ -2,9 +2,11 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { api } from '../services/api'
 import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const { confirm } = useConfirm()
 const kbs = ref([])
 const totalKbs = ref(0)
 const loading = ref(true)
@@ -222,6 +224,7 @@ const exportToCSV = () => {
                     'w-2 h-2 rounded-full': kb.status !== 'pending',
                     'bg-green-500': kb.status === 'ok',
                     'bg-yellow-500': kb.status === 'pending',
+                    'bg-amber-500': kb.status === 'changed',
                     'bg-red-500': kb.status === 'failed',
                     'bg-gray-300': kb.status === 'never_crawled'
                   }"></div>

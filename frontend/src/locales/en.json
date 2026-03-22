@@ -140,6 +140,7 @@
       "statuses": {
         "ok": "Synced",
         "pending": "Syncing",
+        "changed": "Changed",
         "failed": "Failed",
         "never_crawled": "Not Synced"
       }

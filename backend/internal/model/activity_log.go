@@ -22,6 +22,7 @@ type ActivityLog struct {
 	CaseID       *uuid.UUID     `json:"case_id,omitempty" gorm:"type:uuid"`
 	UniversityID *uuid.UUID     `json:"university_id,omitempty" gorm:"type:uuid"`
 	UserID       *uuid.UUID     `json:"user_id,omitempty" gorm:"type:uuid"`
+	User         *User          `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	EventType    string         `json:"event_type"`
 	Description  string         `json:"details"`
 	Metadata     datatypes.JSON `json:"metadata" gorm:"type:jsonb"`

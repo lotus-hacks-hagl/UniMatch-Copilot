@@ -97,3 +97,7 @@ func (r *caseRepository) Count(ctx context.Context, status string) (int64, error
 	err := q.Count(&count).Error
 	return count, err
 }
+
+func (r *caseRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.Case{}, "id = ?", id).Error
+}

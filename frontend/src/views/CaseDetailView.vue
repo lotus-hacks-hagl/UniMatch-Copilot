@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { usePolling } from '../composables/usePolling'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '../composables/useToast'
 import { useAuthStore } from '../stores/authStore'
 import { useCasesStore } from '../stores/casesStore'
 import { useConfirm } from '../composables/useConfirm'
@@ -14,6 +15,7 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const casesStore = useCasesStore()
 const { confirm } = useConfirm()
+const toast = useToast()
 
 const caseData = ref(null)
 const loading = ref(true)
@@ -104,9 +106,27 @@ const handleClaim = async () => {
   try {
     await casesStore.claimCase(route.params.id)
     await fetchCase()
-    alert('Case claimed successfully!')
+    toast.addToast('Case claimed successfully!', 'success')
   } catch (err) {
-    alert('Failed to claim case')
+    toast.addToast('Failed to claim case', 'error')
+  }
+}
+
+const handleDelete = async () => {
+  const ok = await confirm({
+    title: 'Delete Case',
+    message: 'Are you sure you want to delete this case? This will permanently remove all associated data and recommendations.',
+    type: 'danger',
+    confirmLabel: 'Delete Permanently'
+  })
+  if (!ok) return
+
+  try {
+    await api.delete(`/cases/${route.params.id}`)
+    toast.addToast('Case deleted successfully', 'success')
+    router.push('/cases')
+  } catch (err) {
+    toast.addToast('Failed to delete case', 'error')
   }
 }
 
@@ -114,19 +134,19 @@ const updateReport = async () => {
   try {
     const summary = { ...caseData.value.profile_summary, main_opinion: editedSummary.value }
     await api.put(`/cases/${route.params.id}`, { profile_summary: summary })
-    alert('Summary updated!')
+    toast.addToast('Summary updated!', 'success')
     await fetchCase()
   } catch (err) {
-    alert('Update failed')
+    toast.addToast('Update failed', 'error')
   }
 }
 
 const generateReport = async () => {
   try {
     await api.post(`/cases/${route.params.id}/report`)
-    alert('Report generation triggered successfully.')
+    toast.addToast('Report generation triggered successfully.', 'success')
   } catch (err) {
-    alert('Failed to trigger report.')
+    toast.addToast('Failed to trigger report.', 'error')
   }
 }
 
@@ -138,7 +158,7 @@ const addNote = async () => {
     noteText.value = ''
     await fetchCase()
   } catch (err) {
-    alert('Failed to add note')
+    toast.addToast('Failed to add note', 'error')
   } finally {
     isAddingNote.value = false
   }
@@ -161,8 +181,9 @@ const onFileSelected = async (event) => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
       await fetchCase()
+      toast.addToast('Document uploaded!', 'success')
   } catch (err) {
-    alert('Failed to upload document')
+    toast.addToast('Failed to upload document', 'error')
   } finally {
     isUploading.value = false
     event.target.value = ''
@@ -193,7 +214,7 @@ const reAnalyze = async () => {
   isReAnalyzing.value = true
   try {
     await api.post(`/cases/${route.params.id}/analyze`)
-    alert('Re-analysis triggered!')
+    toast.addToast('Re-analysis triggered!', 'success')
     await fetchCase()
     // Start polling if not already polling
     if (!pollTimer) {
@@ -206,7 +227,7 @@ const reAnalyze = async () => {
       }, 3000)
     }
   } catch (err) {
-    alert('Failed to trigger re-analysis')
+    toast.addToast('Failed to trigger re-analysis', 'error')
   } finally {
     isReAnalyzing.value = false
   }
@@ -275,7 +296,7 @@ const downloadSummary = () => {
 
         <script>
           window.onload = function() { window.print(); window.close(); }
-        </script>
+        <\/script>
       </body>
     </html>
   `)
@@ -384,11 +405,13 @@ const downloadSummary = () => {
                   <span class="font-bold text-[#18180f]">Assigned to {{ caseData.assigned_to.username }}</span>
                 </div>
                 <button @click="generateReport" class="btn-outline w-full hover:-translate-y-0.5">
-                  {{ $t('caseDetail.generateReport') }}
-                </button>
-                <button @click="downloadSummary" class="btn-outline w-full hover:-translate-y-0.5">
-                  <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                   Download Summary PDF
+                </button>
+                <button v-if="authStore.isAdmin" 
+                        @click="handleDelete" 
+                        class="btn-outline w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  Delete This Case
                 </button>
               </div>
             </div>

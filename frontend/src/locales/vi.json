@@ -135,7 +135,15 @@
       "institution": "Tên trường",
       "location": "Vị trí",
       "acceptance": "Tỉ lệ nhận",
-      "tuition": "Học phí (Ước tính)"
+      "tuition": "Học phí (Ước tính)",
+      "status": "Trạng thái đồng bộ",
+      "statuses": {
+        "ok": "Đã đồng bộ",
+        "pending": "Đang đồng bộ",
+        "changed": "Có thay đổi",
+        "failed": "Thất bại",
+        "never_crawled": "Chưa đồng bộ"
+      }
     },
     "modal": {
       "title": "Thêm trường ĐH",

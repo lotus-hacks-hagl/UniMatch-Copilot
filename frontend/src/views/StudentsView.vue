@@ -3,8 +3,12 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useI18n } from 'vue-i18n'
+import { useConfirm } from '../composables/useConfirm'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const { confirm } = useConfirm()
+const toast = useToast()
 
 const { t } = useI18n()
 const students = ref([])
@@ -82,22 +86,29 @@ const closeEditModal = () => {
 const saveStudent = async () => {
   try {
     await api.put(`/students/${editingStudent.value.id}`, editForm.value)
-    alert('Student updated successfully!')
+    toast.addToast('Student updated successfully!', 'success')
     closeEditModal()
     await fetchStudents(pagination.value.page)
   } catch (err) {
-    alert('Update failed')
+    toast.addToast('Update failed', 'error')
   }
 }
 
 const deleteStudent = async (id) => {
-  if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return
+  const ok = await confirm({
+    title: 'Delete Student Profile',
+    message: 'Are you sure you want to delete this student? This action cannot be undone.',
+    type: 'danger',
+    confirmLabel: 'Delete'
+  })
+  if (!ok) return
+
   try {
     await api.delete(`/students/${id}`)
-    alert('Student deleted!')
+    toast.addToast('Student deleted!', 'success')
     await fetchStudents(pagination.value.page)
   } catch (err) {
-    alert('Delete failed')
+    toast.addToast('Delete failed', 'error')
   }
 }
 

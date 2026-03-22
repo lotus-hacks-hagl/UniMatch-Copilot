@@ -28,7 +28,6 @@ func (h *InternalHandler) JobDone(c *gin.Context) {
 		return
 	}
 
-	// Route to appropriate service based on job type
 	var appErr *apperror.AppError
 	switch payload.JobType {
 	case "crawl_university":

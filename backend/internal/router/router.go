@@ -87,6 +87,7 @@ func SetupRouter(
 					cases.POST("/:id/report", casesH.RequestReport)
 					cases.POST("/:id/notes", casesH.AddNote)
 					cases.POST("/:id/analyze", casesH.ReAnalyze)
+					cases.DELETE("/:id", casesH.Delete)
 					
 					// Document routes
 					cases.POST("/:id/documents", docH.Upload)
