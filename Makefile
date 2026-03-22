@@ -7,6 +7,10 @@ build-fe:
 upgrade-fe: build-fe
 	@sshpass -p 'Hub@aioz1' scp -r ./frontend/dist aioz-ai-hub@10.0.0.154:~/Desktop/dapps/UniMatch-Copilot/frontend/
 
+deploy-frontend:
+	@echo "Deploying frontend to Vercel..."
+	@cd frontend && npx vercel --prod
+
 ## be
 build-be:
 	@cd backend && make build
