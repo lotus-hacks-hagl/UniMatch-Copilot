@@ -28,7 +28,7 @@ func (s *stubCaseService) GetByID(ctx context.Context, id uuid.UUID) (*model.Cas
 	return nil, nil
 }
 
-func (s *stubCaseService) List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, *apperror.AppError) {
+func (s *stubCaseService) List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, search string, page, limit int) ([]model.Case, int64, *apperror.AppError) {
 	return nil, 0, nil
 }
 
@@ -83,10 +83,18 @@ func (s *stubUniversityService) CountActiveCrawls(ctx context.Context) (int64, *
 	return 0, nil
 }
 
+func (s *stubUniversityService) Crawl(ctx context.Context, id uuid.UUID) *apperror.AppError {
+	return nil
+}
+
 func (s *stubUniversityService) HandleCrawlDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError {
 	if s.handleCrawlDone != nil {
 		return s.handleCrawlDone(ctx, payload)
 	}
+	return nil
+}
+
+func (s *stubUniversityService) Delete(ctx context.Context, id uuid.UUID) *apperror.AppError {
 	return nil
 }
 

@@ -36,8 +36,26 @@ async def process_crawl_job(job: dict):
 
     update_job(job_id, "processing")
 
+    is_metadata_only = job.get("is_metadata_only", False)
     known_fields = {k: v for k, v in metadata.items() if v is not None}
     null_fields = [k for k, v in metadata.items() if v is None]
+
+    # Optimization: Skip crawling if metadata is complete or manually requested
+    if is_metadata_only or not null_fields:
+        logger.info("Skipping crawl for %s (is_metadata_only=%s, null_fields=%s)", 
+                    metadata["name"], is_metadata_only, len(null_fields))
+        result = {
+            **metadata,
+            "crawl_status": "ok",
+            "changes_detected": [],
+            "source_urls": [],
+            "crawled_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        }
+        if callback_url:
+            await callback_be(callback_url, job_id, "crawl_university", "done", result=result, university_id=university_id)
+        update_job(job_id, "done", result=result)
+        return
+
 
     with open("prompts/crawl_system.txt") as f:
         system_prompt = (

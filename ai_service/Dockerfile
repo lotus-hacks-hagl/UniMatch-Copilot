@@ -26,7 +26,7 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 COPY . .
 
 # Expose port (can be overridden by PORT env)
-EXPOSE 9000
+EXPOSE 8895
 
 # Start Uvicorn
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8895"]

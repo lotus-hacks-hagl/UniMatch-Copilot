@@ -2,14 +2,13 @@ package dto
 
 import (
 	"encoding/json"
-	"errors"
 )
 
 // ─── Requests ────────────────────────────────────────────────────────────────
 
 type CreateCaseRequest struct {
 	FullName               string   `json:"full_name" validate:"required"`
-	GpaNormalized          *float64 `json:"gpa_normalized" validate:"required,min=0,max=4"`
+	GpaNormalized          *float64 `json:"gpa_normalized" validate:"omitempty,min=0,max=4"`
 	GpaRaw                 float64  `json:"gpa_raw"`
 	GpaScale               float64  `json:"gpa_scale"`
 	IeltsOverall           *float64 `json:"ielts_overall"`
@@ -34,11 +33,8 @@ type IeltsBreakdown struct {
 	Speaking  float64 `json:"speaking"`
 }
 
-// Validate ensures at least one of ielts_overall or sat_total is provided
+// Validate ensures at least one of ielts_overall or sat_total is provided (RELAXED: optional)
 func (r *CreateCaseRequest) Validate() error {
-	if r.IeltsOverall == nil && r.SatTotal == nil {
-		return errors.New("ielts_overall or sat_total is required")
-	}
 	return nil
 }
 

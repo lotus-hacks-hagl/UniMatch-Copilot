@@ -23,7 +23,7 @@ type ActivityLog struct {
 	UniversityID *uuid.UUID     `json:"university_id,omitempty" gorm:"type:uuid"`
 	UserID       *uuid.UUID     `json:"user_id,omitempty" gorm:"type:uuid"`
 	EventType    string         `json:"event_type"`
-	Description  string         `json:"description"`
+	Description  string         `json:"details"`
 	Metadata     datatypes.JSON `json:"metadata" gorm:"type:jsonb"`
 }
 

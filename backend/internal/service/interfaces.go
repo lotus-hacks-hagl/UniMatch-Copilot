@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 
 	"unimatch-be/internal/dto"
 	"unimatch-be/internal/model"
@@ -13,7 +14,7 @@ import (
 type CaseService interface {
 	Create(ctx context.Context, req dto.CreateCaseRequest) (*dto.CaseCreatedResponse, *apperror.AppError)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Case, *apperror.AppError)
-	List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, *apperror.AppError)
+	List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, search string, page, limit int) ([]model.Case, int64, *apperror.AppError)
 	Claim(ctx context.Context, id uuid.UUID, userID uuid.UUID) *apperror.AppError
 	Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) *apperror.AppError
 	Count(ctx context.Context, status string) (int64, *apperror.AppError)
@@ -26,9 +27,11 @@ type CaseService interface {
 type UniversityService interface {
 	Create(ctx context.Context, req dto.CreateUniversityRequest) (*model.University, *apperror.AppError)
 	List(ctx context.Context, country, search string, page, limit int) ([]model.University, int64, *apperror.AppError)
+	Crawl(ctx context.Context, id uuid.UUID) *apperror.AppError
 	CrawlAll(ctx context.Context) (int, *apperror.AppError)
 	CountActiveCrawls(ctx context.Context) (int64, *apperror.AppError)
 	HandleCrawlDone(ctx context.Context, payload dto.JobDonePayload) *apperror.AppError
+	Delete(ctx context.Context, id uuid.UUID) *apperror.AppError
 }
 
 type DashboardService interface {
@@ -43,6 +46,14 @@ type StudentService interface {
 	List(ctx context.Context, page, limit int) (*dto.ListStudentsResponse, *apperror.AppError)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Student, *apperror.AppError)
 	Update(ctx context.Context, id uuid.UUID, req dto.UpdateStudentRequest) *apperror.AppError
+	Delete(ctx context.Context, id uuid.UUID) *apperror.AppError
+}
+
+type CaseDocumentService interface {
+	Upload(ctx context.Context, caseID uuid.UUID, userID *uuid.UUID, fileName string, fileType string, fileSize int64, reader io.Reader) (*model.CaseDocument, *apperror.AppError)
+	List(ctx context.Context, caseID uuid.UUID) ([]model.CaseDocument, *apperror.AppError)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.CaseDocument, *apperror.AppError)
+	GetPhysicalPath(doc *model.CaseDocument) string
 	Delete(ctx context.Context, id uuid.UUID) *apperror.AppError
 }
 

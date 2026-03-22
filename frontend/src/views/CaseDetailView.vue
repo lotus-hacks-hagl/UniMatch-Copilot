@@ -17,6 +17,12 @@ const caseData = ref(null)
 const loading = ref(true)
 const activeTab = ref('profile')
 const editedSummary = ref('')
+const noteText = ref('')
+const isAddingNote = ref(false)
+
+const documents = ref([])
+const isUploading = ref(false)
+const fileInput = ref(null)
 
 const tabs = computed(() => {
   const baseTabs = ['profile', 'aiAnalysis', 'documents', 'communication']
@@ -52,6 +58,7 @@ const fetchCase = async () => {
     if (res.data?.success) {
       caseData.value = res.data.data
       editedSummary.value = caseData.value.profile_summary?.main_opinion || ''
+      documents.value = caseData.value.documents || []
     }
   } catch (err) {
     console.error('Fetch case failed', err)
@@ -61,17 +68,16 @@ const fetchCase = async () => {
 }
 
 let pollTimer = null
-onMounted(() => {
-  fetchCase().then(() => {
-    if (caseData.value && ['pending', 'processing'].includes(caseData.value.status)) {
-      pollTimer = setInterval(async () => {
-        await fetchCase()
-        if (!['pending', 'processing'].includes(caseData.value?.status)) {
-          clearInterval(pollTimer)
-        }
-      }, 3000)
-    }
-  })
+onMounted(async () => {
+  await fetchCase()
+  if (caseData.value && ['pending', 'processing'].includes(caseData.value.status)) {
+    pollTimer = setInterval(async () => {
+      await fetchCase()
+      if (!['pending', 'processing'].includes(caseData.value?.status)) {
+        clearInterval(pollTimer)
+      }
+    }, 3000)
+  }
 })
 
 onUnmounted(() => {
@@ -122,8 +128,6 @@ const generateReport = async () => {
   }
 }
 
-const noteText = ref('')
-const isAddingNote = ref(false)
 const addNote = async () => {
   if (!noteText.value.trim()) return
   isAddingNote.value = true
@@ -136,6 +140,43 @@ const addNote = async () => {
   } finally {
     isAddingNote.value = false
   }
+}
+
+const triggerUpload = () => {
+  fileInput.value.click()
+}
+
+const onFileSelected = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  isUploading.value = true
+  try {
+    await api.post(`/cases/${route.params.id}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+      await fetchCase()
+  } catch (err) {
+    alert('Failed to upload document')
+  } finally {
+    isUploading.value = false
+    event.target.value = ''
+  }
+}
+
+const downloadDoc = (doc) => {
+  window.open(`${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/documents/${doc.id}`, '_blank')
+}
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 const isReAnalyzing = ref(false)
@@ -161,6 +202,76 @@ const reAnalyze = async () => {
   } finally {
     isReAnalyzing.value = false
   }
+}
+
+const downloadSummary = () => {
+  const student = caseData.value.student
+  const summary = caseData.value.profile_summary
+  const recs = sortedRecommendations.value
+
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Case Summary - ${student?.full_name}</title>
+        <style>
+          body { font-family: sans-serif; padding: 40px; color: #18180f; line-height: 1.6; }
+          .header { border-bottom: 2px solid #a32d2d; padding-bottom: 20px; margin-bottom: 30px; }
+          h1 { margin: 0; color: #a32d2d; }
+          .section { margin-bottom: 30px; }
+          .section-title { font-weight: bold; font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          .label { font-weight: bold; font-size: 12px; color: #6b6a62; text-transform: uppercase; }
+          .val { font-size: 15px; }
+          .rec-card { border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+          .tier { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+          .tier-safe { background: #e8f5e9; color: #2e7d32; }
+          .tier-match { background: #fff8e1; color: #f57f17; }
+          .tier-reach { background: #fee2e2; color: #a32d2d; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>UniMatch Case Summary</h1>
+          <p>Generated on ${new Date().toLocaleDateString()}</p>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Student Profile</div>
+          <div class="grid">
+            <div><div class="label">Full Name</div><div class="val">${student?.full_name}</div></div>
+            <div><div class="label">Intended Major</div><div class="val">${student?.intended_major}</div></div>
+            <div><div class="label">GPA (Raw/Scale)</div><div class="val">${student?.gpa_raw} / ${student?.gpa_scale}</div></div>
+            <div><div class="label">IELTS</div><div class="val">${student?.ielts_overall || 'N/A'}</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">AI Match Analysis</div>
+          <p>${summary?.main_opinion || 'No summary available.'}</p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">University Recommendations</div>
+          ${recs.map(r => `
+            <div class="rec-card">
+              <div style="display: flex; justify-content: space-between;">
+                <span class="val" style="font-weight:bold">${r.university_name}</span>
+                <span class="tier tier-${r.tier}">${r.tier}</span>
+              </div>
+              <p style="font-size: 13px; color: #6b6a62; margin: 8px 0;">${r.reason}</p>
+              <div style="font-size: 11px; color: #8a8980;">Likelihood: ${r.admission_likelihood_score}% | Fit: ${r.student_fit_score}%</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <script>
+          window.onload = function() { window.print(); window.close(); }
+        </script>
+      </body>
+    </html>
+  `)
+  printWindow.document.close()
 }
 </script>
 
@@ -265,9 +376,11 @@ const reAnalyze = async () => {
                   <span class="font-bold text-[#18180f]">Assigned to {{ caseData.assigned_to.username }}</span>
                 </div>
                 
-                <button @click="generateReport" data-testid="case-generate-report" class="btn-outline w-full hover:-translate-y-0.5">
-                  <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                   {{ $t('caseDetail.generateReport') }}
+                </button>
+                <button @click="downloadSummary" class="btn-outline w-full hover:-translate-y-0.5">
+                  <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                  Download Summary PDF
                 </button>
               </div>
             </div>
@@ -387,28 +500,41 @@ const reAnalyze = async () => {
                 <!-- Documents Tab -->
                 <div v-else-if="activeTab === 'documents'" key="documents" class="space-y-6">
                   <div class="bg-white p-8 rounded-[20px] shadow-sm border border-black/5">
-                    <h3 class="text-lg font-bold text-[#18180f] mb-6">Contract & Documents</h3>
-                    <div class="space-y-4">
-                      <div class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between">
+                    <div class="flex items-center justify-between mb-6">
+                      <h3 class="text-lg font-bold text-[#18180f]">Contract & Documents</h3>
+                      <div class="flex items-center gap-3">
+                        <input type="file" ref="fileInput" class="hidden" @change="onFileSelected" />
+                        <button @click="triggerUpload" :disabled="isUploading" class="btn-secondary px-4 py-2 flex items-center gap-2">
+                          <svg v-if="!isUploading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                          <div v-else class="w-4 h-4 border-2 border-black/10 border-t-[#a32d2d] rounded-full animate-spin"></div>
+                          {{ isUploading ? 'Uploading...' : 'Upload File' }}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div v-if="documents.length > 0" class="space-y-4">
+                      <div v-for="doc in documents" :key="doc.id" class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between group hover:bg-white hover:border-[#a32d2d]/30 transition-all duration-300">
                         <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-red-600 shadow-sm font-bold">PDF</div>
+                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm font-bold text-[10px] uppercase overflow-hidden"
+                               :class="doc.file_type.includes('pdf') ? 'text-red-600' : 'text-blue-600'">
+                            {{ doc.file_name.split('.').pop() }}
+                          </div>
                           <div>
-                            <div class="text-[14px] font-bold text-[#18180f]">Student_Contract_v1.pdf</div>
-                            <div class="text-[12px] text-[#6b6a62]">Uploaded Mar 21, 2026</div>
+                            <div class="text-[14px] font-bold text-[#18180f] group-hover:text-[#a32d2d] transition-colors">{{ doc.file_name }}</div>
+                            <div class="text-[12px] text-[#6b6a62]">{{ new Date(doc.created_at).toLocaleDateString() }} • {{ formatFileSize(doc.file_size) }}</div>
                           </div>
                         </div>
-                        <button class="text-[#a32d2d] font-bold text-[13px] hover:underline">Download</button>
+                        <button @click="downloadDoc(doc)" class="text-[#a32d2d] font-bold text-[13px] hover:underline flex items-center gap-1.5 p-2 bg-white rounded-lg shadow-sm border border-black/5 opacity-0 group-hover:opacity-100 transition-all">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0L8 12m4 4V4"></path></svg>
+                          Download
+                        </button>
                       </div>
-                      <div class="p-4 bg-[#f4f5f7] rounded-xl border border-black/5 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm font-bold">DOC</div>
-                          <div>
-                            <div class="text-[14px] font-bold text-[#18180f]">Transcript_Official.docx</div>
-                            <div class="text-[12px] text-[#6b6a62]">Uploaded Mar 21, 2026</div>
-                          </div>
-                        </div>
-                        <button class="text-[#a32d2d] font-bold text-[13px] hover:underline">Download</button>
+                    </div>
+                    <div v-else class="text-center py-12 bg-[#fafafa] rounded-2xl border border-dashed border-black/10">
+                      <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-[#a8a79d]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                       </div>
+                      <div class="text-[14px] font-medium text-[#6b6a62]">No documents uploaded yet</div>
                     </div>
                   </div>
                 </div>

@@ -25,14 +25,24 @@ func main() {
 	_ = godotenv.Load()
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL not set")
+		dbURL = "postgres://postgres:password@localhost:5432/unimatch_be?sslmode=disable"
 	}
 
-	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
+	dialector := postgres.Open(dbURL)
+	db, err := gorm.Open(dialector, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
 	})
+
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		log.Println("⚠️  Failed to connect to DB, trying localhost fallback...")
+		localURL := "postgres://postgres:password@localhost:5432/unimatch_be?sslmode=disable"
+		db, err = gorm.Open(postgres.Open(localURL), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		})
+	}
+
+	if err != nil {
+		log.Fatalf("❌ failed to connect database: %v", err)
 	}
 
 	gofakeit.Seed(42)
@@ -139,8 +149,8 @@ func main() {
 		universities = append(universities, uni)
 	}
 
-	// Generate 100 more fake universities
-	for i := 0; i < 100; i++ {
+	// Generate 40 more fake universities
+	for i := 0; i < 30; i++ {
 		country := countries[rng.Intn(len(countries))]
 		rankVal := rng.Intn(900) + 100
 		acceptance := 0.10 + rng.Float64()*0.65

@@ -26,14 +26,14 @@ export const useCasesStore = defineStore('cases', {
         activeCrawls: Number(data.activeCrawls || 0)
       }
     },
-    async fetchCases(filterStatus = 'All', assignedTo = null) {
+    async fetchCases(filterStatus = 'All', assignedTo = null, search = '') {
       this.loading = true
       this.filter = filterStatus
       let queryStatus = filterStatus.toLowerCase().replace(' ', '_')
       if (filterStatus === 'All' || filterStatus === 'All cases') queryStatus = 'all'
       
       try {
-        const params = { status: queryStatus, page: 1, limit: 100 }
+        const params = { status: queryStatus, page: 1, limit: 100, search }
         if (assignedTo) {
           params.assigned_to = assignedTo
         }

@@ -26,6 +26,8 @@ func (r *caseRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.Cas
 	var c model.Case
 	err := r.db.WithContext(ctx).
 		Preload("Student").
+		Preload("Documents").
+		Preload("ActivityLogs.User").
 		Preload("Recommendations", func(db *gorm.DB) *gorm.DB {
 			return db.Order("rank_order ASC")
 		}).
@@ -36,23 +38,27 @@ func (r *caseRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.Cas
 	return &c, err
 }
 
-func (r *caseRepository) FindAll(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, error) {
+func (r *caseRepository) FindAll(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, search string, page, limit int) ([]model.Case, int64, error) {
 	var cases []model.Case
 	var total int64
 
-	q := r.db.WithContext(ctx).Model(&model.Case{}).Preload("Student")
+	q := r.db.WithContext(ctx).Model(&model.Case{}).Joins("Student").Preload("Student")
 	if status != "" && status != "all" {
-		q = q.Where("status = ?", status)
+		q = q.Where("cases.status = ?", status)
 	}
 
 	if assignedToID != nil {
-		q = q.Where("assigned_to_id = ?", assignedToID)
+		q = q.Where("cases.assigned_to_id = ?", assignedToID)
 	} else if filterNone {
-		q = q.Where("assigned_to_id IS NULL")
+		q = q.Where("cases.assigned_to_id IS NULL")
+	}
+
+	if search != "" {
+		q = q.Where("(\"Student\".full_name ILIKE ? OR \"Student\".intended_major ILIKE ?)", "%"+search+"%", "%"+search+"%")
 	}
 
 	q.Count(&total)
-	err := q.Order("created_at DESC").
+	err := q.Order("cases.created_at DESC").
 		Offset((page - 1) * limit).Limit(limit).
 		Find(&cases).Error
 	return cases, total, err

@@ -74,6 +74,7 @@ func (h *CasesHandler) List(c *gin.Context) {
 	assignedTo := c.Query("assigned_to")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	search := c.Query("search")
 
 	var assignedToID *uuid.UUID
 	var filterNone bool
@@ -93,7 +94,7 @@ func (h *CasesHandler) List(c *gin.Context) {
 		}
 	}
 
-	cases, total, appErr := h.svc.List(c.Request.Context(), status, assignedToID, filterNone, page, limit)
+	cases, total, appErr := h.svc.List(c.Request.Context(), status, assignedToID, filterNone, search, page, limit)
 	if appErr != nil {
 		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
 		return

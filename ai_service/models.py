@@ -52,6 +52,7 @@ class CrawlJobRequest(BaseModel):
     )
     university_id: str                           # BE's UUID
     callback_url: str = ""
+    is_metadata_only: bool = False
     metadata: UniversityMetadata                 # full metadata, nulls = fields to detect
 
 

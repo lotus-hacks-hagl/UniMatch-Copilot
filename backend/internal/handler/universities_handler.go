@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 type UniversitiesHandler struct {
@@ -122,4 +123,60 @@ func (h *UniversitiesHandler) CrawlActiveCount(c *gin.Context) {
 		return
 	}
 	response.OK(c, gin.H{"active_crawls": count})
+}
+
+// Crawl godoc
+// @Summary Trigger crawl for a single university
+// @Description Submits an async crawl job for a specific university
+// @Tags universities
+// @Produce json
+// @Param id path string true "University ID"
+// @Success 200 {object} response.Response
+// @Failure 404 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
+// @Router /universities/{id}/crawl [post]
+func (h *UniversitiesHandler) Crawl(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid university id")
+		return
+	}
+
+	appErr := h.svc.Crawl(c.Request.Context(), id)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+	response.OK(c, gin.H{"message": "crawl job submitted"})
+}
+
+// Delete godoc
+// @Summary Delete university
+// @Description Delete a university record and sync with AI graph
+// @Tags universities
+// @Produce json
+// @Param id path string true "University ID"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 404 {object} response.Response{error=swagger.SwaggerError}
+// @Failure 500 {object} response.Response{error=swagger.SwaggerError}
+// @Security BearerAuth
+// @Router /universities/{id} [delete]
+func (h *UniversitiesHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "INVALID_ID", "invalid university id")
+		return
+	}
+
+	appErr := h.svc.Delete(c.Request.Context(), id)
+	if appErr != nil {
+		response.Fail(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+		return
+	}
+
+	response.OK(c, gin.H{"message": "university deleted and graph synced"})
 }

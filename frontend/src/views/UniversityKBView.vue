@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { api } from '../services/api'
 import { useToast } from '../composables/useToast'
 import { useI18n } from 'vue-i18n'
@@ -9,6 +9,12 @@ const kbs = ref([])
 const totalKbs = ref(0)
 const loading = ref(true)
 const toast = useToast()
+
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalPages = computed(() => Math.ceil(totalKbs.value / pageSize.value))
+const searchQuery = ref('')
+let debounceTimer = null
 
 const showModal = ref(false)
 const formData = ref({
@@ -22,17 +28,24 @@ const formData = ref({
 const fetchUniversities = async () => {
   loading.value = true
   try {
-    const res = await api.get('/universities', { params: { page: 1, limit: 100 } })
+    const res = await api.get('/universities', { 
+      params: { 
+        page: currentPage.value, 
+        limit: pageSize.value,
+        search: searchQuery.value
+      } 
+    })
     const uniList = (res.data.data || []).map(u => ({
       id: u.id,
       name: u.name,
       location: u.country || 'N/A',
       rank: u.qs_rank || '-',
       acceptance: u.acceptance_rate ? (u.acceptance_rate * 100).toFixed(1) + '%' : 'N/A',
-      tuition: u.tuition_usd_per_year ? `$${u.tuition_usd_per_year}` : 'N/A'
+      tuition: u.tuition_usd_per_year ? `$${u.tuition_usd_per_year}` : 'N/A',
+      status: u.crawl_status || 'never_crawled'
     }))
     kbs.value = uniList
-    totalKbs.value = res.data.total || uniList.length
+    totalKbs.value = res.data.meta?.total || uniList.length
   } catch (error) {
     console.error('Failed to fetch universities', error)
   } finally {
@@ -40,19 +53,41 @@ const fetchUniversities = async () => {
   }
 }
 
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  fetchUniversities()
+}
+
+watch(searchQuery, () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    currentPage.value = 1
+    fetchUniversities()
+  }, 300)
+})
+
 onMounted(fetchUniversities)
 
 const addUniversity = async () => {
   try {
-    await api.post('/universities', {
+    const res = await api.post('/universities', {
       name: formData.value.name,
       country: formData.value.location,
-      qs_rank: parseInt(formData.value.rank) || null,
-      acceptance_rate: formData.value.acceptance ? parseFloat(formData.value.acceptance)/100 : null,
-      tuition_usd_per_year: parseInt(formData.value.tuition.replace(/\D/g,'')) || null
+      qs_rank: formData.value.rank ? parseInt(formData.value.rank) : null,
+      acceptance_rate: formData.value.acceptance ? parseFloat(formData.value.acceptance.replace('%',''))/100 : null,
+      tuition_usd_per_year: formData.value.tuition ? parseInt(formData.value.tuition.replace(/\D/g,'')) : null
     })
+    
     toast.addToast(t('universityKb.toasts.addSuccess'), 'success')
     showModal.value = false
+    const newUniId = res.data.id
+    
+    // Automatically trigger crawl for the new university to collect missing data
+    if (newUniId) {
+      api.post(`/universities/${newUniId}/crawl`).catch(e => console.error('Auto-crawl failed', e))
+    }
+
     formData.value = { name: '', location: '', rank: '', acceptance: '', tuition: '' }
     await fetchUniversities()
   } catch(err) {
@@ -68,6 +103,42 @@ const runSync = async () => {
     toast.addToast(t('universityKb.toasts.syncFail'), 'error')
   }
 }
+
+const deleteUniversity = async (id) => {
+  if (!confirm('Are you sure you want to delete this university? This will also remove it from the AI Knowledge Graph.')) return
+  try {
+    await api.delete(`/universities/${id}`)
+    toast.addToast('University deleted successfully', 'success')
+    await fetchUniversities()
+  } catch (error) {
+    toast.addToast('Failed to delete university', 'error')
+  }
+}
+
+const exportToCSV = () => {
+  if (kbs.value.length === 0) return
+  
+  const headers = ['Name', 'Location', 'Rank', 'Acceptance Rate', 'Tuition', 'Status']
+  const rows = kbs.value.map(u => [
+    `"${u.name}"`,
+    `"${u.location}"`,
+    u.rank,
+    u.acceptance,
+    `"${u.tuition}"`,
+    u.status
+  ])
+  
+  const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.setAttribute("href", url)
+  link.setAttribute("download", `universities_export_${new Date().toISOString().slice(0,10)}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 </script>
 
 <template>
@@ -79,12 +150,16 @@ const runSync = async () => {
       </div>
       <div class="flex items-center gap-4">
         <div class="relative shadow-sm hover-elevate rounded-lg">
-          <input type="text" :placeholder="$t('universityKb.search')" class="pl-9 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-lg w-[260px] transition-all" />
+          <input v-model="searchQuery" type="text" :placeholder="$t('universityKb.search')" class="pl-9 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-lg w-[260px] transition-all" />
           <svg class="w-4 h-4 text-[#a8a79d] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
         <button @click="runSync" data-testid="university-sync" class="btn-outline">
           <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           {{ $t('universityKb.sync') }}
+        </button>
+        <button @click="exportToCSV" class="btn-outline">
+          <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Export
         </button>
         <button @click="showModal = true" class="btn-primary shadow-[0_4px_14px_rgba(163,45,45,0.35)]">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
@@ -113,11 +188,13 @@ const runSync = async () => {
             <tr class="text-[12px] text-[#8a8980] uppercase tracking-wider border-b border-black/5 bg-[#fafafa]">
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.rank') }}</th>
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.institution') }}</th>
-              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.location') }}</th>
+               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.location') }}</th>
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.acceptance') }}</th>
               <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.tuition') }}</th>
+              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.status') }}</th>
+              <th class="px-6 py-4 font-bold text-right">Actions</th>
             </tr>
-          </thead>
+</thead>
           <TransitionGroup name="list" tag="tbody" class="divide-y divide-black/5 text-[14px]">
             <tr v-for="kb in kbs" :key="kb.id" class="hover:bg-gray-50/80 transition-colors cursor-pointer group">
               <td class="px-6 py-4 min-w-[100px]">
@@ -131,9 +208,51 @@ const runSync = async () => {
                 <span v-else class="text-[#8a8980] text-[12px] italic">-</span>
               </td>
               <td class="px-6 py-4 font-bold text-[#18180f]">{{ kb.tuition !== 'N/A' ? kb.tuition + '/yr' : '-' }}</td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <div :class="{
+                    'w-2 h-2 rounded-full animate-pulse': kb.status === 'pending',
+                    'w-2 h-2 rounded-full': kb.status !== 'pending',
+                    'bg-green-500': kb.status === 'ok',
+                    'bg-yellow-500': kb.status === 'pending',
+                    'bg-red-500': kb.status === 'failed',
+                    'bg-gray-300': kb.status === 'never_crawled'
+                  }"></div>
+                  <span class="text-[12px] font-medium text-[#6b6a62]">
+                    {{ $t(`universityKb.table.statuses.${kb.status}`) }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <button @click.stop="deleteUniversity(kb.id)" class="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-full hover:bg-red-50">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </td>
             </tr>
           </TransitionGroup>
         </table>
+        <!-- Pagination -->
+        <div v-if="totalKbs > pageSize" class="px-6 py-4 border-t border-black/5 flex items-center justify-between bg-[#fafafa]">
+          <span class="text-[13px] font-medium text-[#6b6a62]">
+            Showing <span class="text-[#18180f] font-bold">{{ (currentPage - 1) * pageSize + 1 }}</span> to <span class="text-[#18180f] font-bold">{{ Math.min(currentPage * pageSize, totalKbs) }}</span> of <span class="text-[#18180f] font-bold">{{ totalKbs }}</span> universities
+          </span>
+          <div class="flex gap-2">
+            <button 
+              @click="changePage(currentPage - 1)" 
+              :disabled="currentPage === 1"
+              class="px-4 py-2 border border-black/10 rounded-lg text-[13px] font-bold hover:bg-gray-50 disabled:opacity-50 transition-all font-sans"
+            >
+              Prev
+            </button>
+            <button 
+              @click="changePage(currentPage + 1)" 
+              :disabled="currentPage >= totalPages"
+              class="px-4 py-2 border border-black/10 rounded-lg text-[13px] font-bold hover:bg-gray-50 disabled:opacity-50 transition-all font-sans"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </Transition>
     </div>
 
@@ -161,17 +280,17 @@ const runSync = async () => {
               </div>
               <div>
                 <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.rank') }}</label>
-                <input required v-model="formData.rank" type="number" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. 5" />
+                <input v-model="formData.rank" type="number" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. 5" />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.acceptance') }}</label>
-                <input required v-model="formData.acceptance" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. 17.5%" />
+                <input v-model="formData.acceptance" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. 17.5%" />
               </div>
               <div>
                 <label class="block text-[13px] font-bold text-[#18180f] mb-1.5">{{ $t('universityKb.modal.tuition') }}</label>
-                <input required v-model="formData.tuition" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. £30,000" />
+                <input v-model="formData.tuition" type="text" class="w-full px-4 py-2.5 rounded-lg border border-black/10 text-[14px] focus:ring-2 focus:ring-[#a32d2d]/10 focus:border-[#a32d2d] outline-none transition-all placeholder-[#a8a79d]" placeholder="e.g. £30,000" />
               </div>
             </div>
             

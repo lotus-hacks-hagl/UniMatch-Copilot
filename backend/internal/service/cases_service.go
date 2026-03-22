@@ -49,14 +49,12 @@ func NewCaseService(
 func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*dto.CaseCreatedResponse, *apperror.AppError) {
 	student := &model.Student{
 		FullName:               req.FullName,
-		GpaNormalized:          *req.GpaNormalized,
 		GpaRaw:                 req.GpaRaw,
 		GpaScale:               req.GpaScale,
 		IeltsOverall:           req.IeltsOverall,
 		SatTotal:               req.SatTotal,
 		ToeflTotal:             req.ToeflTotal,
 		IntendedMajor:          req.IntendedMajor,
-		BudgetUsdPerYear:       *req.BudgetUsdPerYear,
 		PreferredCountries:     req.PreferredCountries,
 		TargetIntake:           req.TargetIntake,
 		ScholarshipRequired:    req.ScholarshipRequired,
@@ -64,6 +62,13 @@ func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*d
 		Achievements:           req.Achievements,
 		PersonalStatementNotes: req.PersonalStatementNotes,
 		BackgroundText:         req.BackgroundText,
+	}
+
+	if req.GpaNormalized != nil {
+		student.GpaNormalized = *req.GpaNormalized
+	}
+	if req.BudgetUsdPerYear != nil {
+		student.BudgetUsdPerYear = *req.BudgetUsdPerYear
 	}
 
 	if req.IeltsBreakdown != nil {
@@ -97,54 +102,24 @@ func (s *caseService) Create(ctx context.Context, req dto.CreateCaseRequest) (*d
 		return nil, apperror.Internal(err, "failed to create case")
 	}
 
-	candidates, err := s.uniRepo.FindAnalyzeCandidates(
-		ctx,
-		[]string(student.PreferredCountries),
-		student.IntendedMajor,
-		student.BudgetUsdPerYear,
-		24,
-	)
-	if err != nil {
-		return nil, apperror.Internal(err, "failed to load university candidates")
-	}
-
-	candidatePayload := make([]client.CandidateUniversity, 0, len(candidates))
-	for _, u := range candidates {
-		candidatePayload = append(candidatePayload, client.CandidateUniversity{
-			UniversityID:             u.ID.String(),
-			UniversityName:           u.Name,
-			Country:                  u.Country,
-			QsRank:                   u.QsRank,
-			IeltsMin:                 u.IeltsMin,
-			SatRequired:              u.SatRequired,
-			GpaExpectationNormalized: u.GpaExpectationNormalized,
-			TuitionUsdPerYear:        u.TuitionUsdPerYear,
-			ScholarshipAvailable:     u.ScholarshipAvailable,
-			AvailableMajors:          []string(u.AvailableMajors),
-			AcceptanceRate:           u.AcceptanceRate,
-		})
-	}
-
 	// Fire & forget: submit analyze job to AI Service
 	analyzeReq := client.AnalyzeJobRequest{
 		JobID:       jobID.String(),
 		CaseID:      caseRecord.ID.String(),
 		CallbackURL: s.cfg.InternalBaseURL + "/internal/jobs/done",
 		Input: client.AnalyzeInput{
-			FullName:              student.FullName,
-			GpaNormalized:         student.GpaNormalized,
-			IeltsOverall:          student.IeltsOverall,
-			SatTotal:              student.SatTotal,
-			ToeflTotal:            student.ToeflTotal,
-			IntendedMajor:         student.IntendedMajor,
-			BudgetUsdPerYear:      student.BudgetUsdPerYear,
-			PreferredCountries:    []string(student.PreferredCountries),
-			TargetIntake:          student.TargetIntake,
-			ScholarshipRequired:   student.ScholarshipRequired,
-			Extracurriculars:      student.Extracurriculars,
-			Achievements:          student.Achievements,
-			BackgroundText:        student.BackgroundText,
-			CandidateUniversities: candidatePayload,
+			FullName:            student.FullName,
+			GpaNormalized:       student.GpaNormalized,
+			IeltsOverall:        student.IeltsOverall,
+			SatTotal:            student.SatTotal,
+			ToeflTotal:          student.ToeflTotal,
+			IntendedMajor:       student.IntendedMajor,
+			BudgetUsdPerYear:    student.BudgetUsdPerYear,
+			PreferredCountries:  []string(student.PreferredCountries),
+			TargetIntake:        student.TargetIntake,
+			ScholarshipRequired: student.ScholarshipRequired,
+			Extracurriculars:    student.Extracurriculars,
+			Achievements:        student.Achievements,
 		},
 	}
 
@@ -179,14 +154,14 @@ func (s *caseService) GetByID(ctx context.Context, id uuid.UUID) (*model.Case, *
 	return c, nil
 }
 
-func (s *caseService) List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, page, limit int) ([]model.Case, int64, *apperror.AppError) {
+func (s *caseService) List(ctx context.Context, status string, assignedToID *uuid.UUID, filterNone bool, search string, page, limit int) ([]model.Case, int64, *apperror.AppError) {
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
-	cases, total, err := s.caseRepo.FindAll(ctx, status, assignedToID, filterNone, page, limit)
+	cases, total, err := s.caseRepo.FindAll(ctx, status, assignedToID, filterNone, search, page, limit)
 	if err != nil {
 		return nil, 0, apperror.Internal(err, "failed to list cases")
 	}
@@ -421,56 +396,25 @@ func (s *caseService) ReAnalyze(ctx context.Context, caseID uuid.UUID) *apperror
 		"status":          model.CaseStatusPending,
 	})
 
-	// 3. Re-load candidates
-	candidates, err := s.uniRepo.FindAnalyzeCandidates(
-		ctx,
-		[]string(c.Student.PreferredCountries),
-		c.Student.IntendedMajor,
-		c.Student.BudgetUsdPerYear,
-		24,
-	)
-	if err != nil {
-		return apperror.Internal(err, "failed to load university candidates")
-	}
-
-	candidatePayload := make([]client.CandidateUniversity, 0, len(candidates))
-	for _, u := range candidates {
-		candidatePayload = append(candidatePayload, client.CandidateUniversity{
-			UniversityID:             u.ID.String(),
-			UniversityName:           u.Name,
-			Country:                  u.Country,
-			QsRank:                   u.QsRank,
-			IeltsMin:                 u.IeltsMin,
-			SatRequired:              u.SatRequired,
-			GpaExpectationNormalized: u.GpaExpectationNormalized,
-			TuitionUsdPerYear:        u.TuitionUsdPerYear,
-			ScholarshipAvailable:     u.ScholarshipAvailable,
-			AvailableMajors:          []string(u.AvailableMajors),
-			AcceptanceRate:           u.AcceptanceRate,
-		})
-	}
-
-	// 4. Re-trigger analysis
+	// 3. Re-trigger analysis
 	jobID := uuid.New()
 	analyzeReq := client.AnalyzeJobRequest{
 		JobID:       jobID.String(),
 		CaseID:      caseID.String(),
 		CallbackURL: s.cfg.InternalBaseURL + "/internal/jobs/done",
 		Input: client.AnalyzeInput{
-			FullName:              c.Student.FullName,
-			GpaNormalized:         c.Student.GpaNormalized,
-			IeltsOverall:          c.Student.IeltsOverall,
-			SatTotal:              c.Student.SatTotal,
-			ToeflTotal:            c.Student.ToeflTotal,
-			IntendedMajor:         c.Student.IntendedMajor,
-			BudgetUsdPerYear:      c.Student.BudgetUsdPerYear,
-			PreferredCountries:    []string(c.Student.PreferredCountries),
-			TargetIntake:          c.Student.TargetIntake,
-			ScholarshipRequired:   c.Student.ScholarshipRequired,
-			Extracurriculars:      c.Student.Extracurriculars,
-			Achievements:          c.Student.Achievements,
-			BackgroundText:        c.Student.BackgroundText,
-			CandidateUniversities: candidatePayload,
+			FullName:            c.Student.FullName,
+			GpaNormalized:       c.Student.GpaNormalized,
+			IeltsOverall:        c.Student.IeltsOverall,
+			SatTotal:            c.Student.SatTotal,
+			ToeflTotal:          c.Student.ToeflTotal,
+			IntendedMajor:       c.Student.IntendedMajor,
+			BudgetUsdPerYear:    c.Student.BudgetUsdPerYear,
+			PreferredCountries:  []string(c.Student.PreferredCountries),
+			TargetIntake:        c.Student.TargetIntake,
+			ScholarshipRequired: c.Student.ScholarshipRequired,
+			Extracurriculars:    c.Student.Extracurriculars,
+			Achievements:        c.Student.Achievements,
 		},
 	}
 

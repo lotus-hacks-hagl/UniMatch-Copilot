@@ -31,6 +31,8 @@ type Case struct {
 	ProcessingStartedAt  *time.Time       `json:"processing_started_at"`
 	ProcessingFinishedAt *time.Time       `json:"processing_finished_at"`
 	Recommendations      []Recommendation `json:"recommendations,omitempty" gorm:"foreignKey:CaseID"`
+	Documents            []CaseDocument   `json:"documents,omitempty" gorm:"foreignKey:CaseID"`
+	ActivityLogs         []ActivityLog    `json:"activity_logs,omitempty" gorm:"foreignKey:CaseID"`
 }
 
 func (Case) TableName() string { return "cases" }

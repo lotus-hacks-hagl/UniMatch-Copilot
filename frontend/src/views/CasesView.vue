@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import { useCasesStore } from '../stores/casesStore'
 import { useAuthStore } from '../stores/authStore'
 import { useI18n } from 'vue-i18n'
+import { watch } from 'vue'
 
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement, Filler } from 'chart.js'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
@@ -18,6 +19,16 @@ const { cases, stats, filter: activeFilter } = storeToRefs(casesStore)
 const { t } = useI18n()
 
 const filters = ['All cases', 'Done', 'Processing', 'Human review']
+
+const searchQuery = ref('')
+let debounceTimer = null
+
+watch(searchQuery, (newVal) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    casesStore.fetchCases(activeFilter.value, null, newVal)
+  }, 300)
+})
 
 const handleClaim = async (event, id) => {
   event.stopPropagation()
@@ -225,7 +236,7 @@ onMounted(async () => {
       </div>
       <div class="flex items-center gap-3">
         <div class="relative shadow-sm rounded-lg">
-          <input type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-10 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-xl w-[280px] transition-all" />
+          <input v-model="searchQuery" type="text" :placeholder="$t('cases.searchPlaceholder')" class="pl-10 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-xl w-[280px] transition-all" />
           <svg class="w-4 h-4 text-[#a8a79d] absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
         <button class="p-2.5 bg-white rounded-xl text-[#6b6a62] border border-black/10 shadow-sm hover:bg-gray-50 hover:-translate-y-0.5 transition-all outline-none focus:ring-2 focus:ring-[#a32d2d]/10">

@@ -88,8 +88,8 @@ func (r *universityRepository) FindAnalyzeCandidates(ctx context.Context, countr
 func (r *universityRepository) FindCrawlable(ctx context.Context) ([]model.University, error) {
 	var unis []model.University
 	err := r.db.WithContext(ctx).
-		Where("crawl_status != ? AND (last_crawled_at IS NULL OR last_crawled_at < NOW() - INTERVAL '1 day')",
-			model.CrawlStatusPending).
+		Where("crawl_status IN (?, ?) OR (crawl_status = ? AND updated_at < NOW() - INTERVAL '4 hours') OR (crawl_status = ? AND (last_crawled_at IS NULL OR last_crawled_at < NOW() - INTERVAL '1 year'))",
+			model.CrawlStatusNeverCrawled, model.CrawlStatusFailed, model.CrawlStatusPending, model.CrawlStatusOK).
 		Find(&unis).Error
 	return unis, err
 }
@@ -104,8 +104,13 @@ func (r *universityRepository) CountByCrawlStatus(ctx context.Context, status st
 }
 
 func (r *universityRepository) UpdateCrawlResult(ctx context.Context, id uuid.UUID, fields map[string]interface{}) error {
+
 	return r.db.WithContext(ctx).
 		Model(&model.University{}).
 		Where("id = ?", id).
 		Updates(fields).Error
+}
+
+func (r *universityRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.University{}, "id = ?", id).Error
 }

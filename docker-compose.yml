@@ -11,21 +11,65 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
-  ai-service-go:
-    build:
-      context: ./ai-service-go
+
+  # ai-service-go:
+  #  build:
+  #    context: ./ai-service-go
+  #    dockerfile: Dockerfile
+  #  image: unimatch-ai-service-local:latest
+  #  container_name: unimatch_ai_service
+  #  env_file:
+  #    - ./ai-service-go/.env
+  #  ports:
+  #    - "8895:8895"
+  #  environment:
+  #    - PORT=8895
+  #    - ENV=development
+  #    - FALLBACK_ENABLED=true
+  #  restart: unless-stopped
+
+  ai-service:
+    build: 
+      context: ./ai_service
       dockerfile: Dockerfile
-    image: unimatch-ai-service-local:latest
-    container_name: unimatch_ai_service
-    env_file:
-      - ./ai-service-go/.env
+    container_name: unimatch_ai_service_python
     ports:
       - "8895:8895"
+    env_file:
+      - ./ai_service/.env
     environment:
-      - PORT=8895
-      - ENV=development
-      - FALLBACK_ENABLED=true
+      - ANTHROPIC_BASE_URL=http://claude-proxy:4000
+      - NEO4J_URI=bolt://neo4j:7687
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    depends_on:
+      - claude-proxy
+      - neo4j
+
+  claude-proxy:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile.proxy
+    container_name: unimatch_claude_proxy
+    restart: unless-stopped
+    env_file:
+      - ./ai_service/.env
+    expose:
+      - "4000"
+
+  neo4j:
+    image: neo4j:5
+    container_name: unimatch_neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-password}
+    volumes:
+      - neo4j_data:/data
+
   backend:
     build:
       context: ./backend
@@ -37,13 +81,15 @@ services:
     environment:
       - PORT=8894
       - DATABASE_URL=postgres://postgres:password@db:5432/unimatch_be?sslmode=disable
-      - AI_SERVICE_URL=http://ai-service-go:8895
+      - AI_SERVICE_URL=http://ai-service:8895
       - PUBLIC_BASE_URL=http://localhost:8894
       - INTERNAL_BASE_URL=http://backend:8894
       - ENV=development
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
-      - ai-service-go
+      - ai-service
     restart: unless-stopped
 
   frontend:
@@ -60,3 +106,4 @@ services:
 
 volumes:
   postgres_data:
+  neo4j_data:

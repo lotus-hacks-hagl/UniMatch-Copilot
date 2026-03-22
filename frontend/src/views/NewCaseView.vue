@@ -86,28 +86,25 @@ function validateStep(step = currentStep.value) {
     if (!form.value.full_name.trim()) {
       setFieldError('full_name', 'Full name is required.')
     }
-    if (raw === null) {
-      setFieldError('gpa_raw', 'GPA is required.')
-    } else {
+    if (raw !== null) {
       if (raw < 0) {
         setFieldError('gpa_raw', 'GPA cannot be negative.')
       } else if (raw > scale) {
         setFieldError('gpa_raw', `GPA cannot be greater than the selected scale (${scale}).`)
       }
+      
+      if (normalized === null) {
+        setFieldError('gpa_normalized', 'Unable to normalize GPA.')
+      } else if (normalized < 0 || normalized > 4) {
+        setFieldError('gpa_normalized', 'Normalized GPA must stay between 0.00 and 4.00.')
+      }
     }
-    if (normalized === null) {
-      setFieldError('gpa_normalized', 'Unable to normalize GPA.')
-    } else if (normalized < 0 || normalized > 4) {
-      setFieldError('gpa_normalized', 'Normalized GPA must stay between 0.00 and 4.00.')
-    }
+    
     if (ielts !== null && (ielts < 0 || ielts > 9)) {
       setFieldError('ielts_overall', 'IELTS must be between 0 and 9.')
     }
     if (sat !== null && (sat < 400 || sat > 1600)) {
       setFieldError('sat_total', 'SAT must be between 400 and 1600.')
-    }
-    if (ielts === null && sat === null) {
-      setFieldError('scores', 'Please provide either IELTS or SAT score.')
     }
   }
 
@@ -180,14 +177,14 @@ const submitForm = async () => {
 
   isSubmitting.value = true
   try {
-    const raw = parseNumber(form.value.gpa_raw) || 0
+    const raw = parseNumber(form.value.gpa_raw)
     const scale = gpaScaleNumber.value
-    const normalized = normalizeGpa(raw, scale) || 0
+    const normalized = raw === null ? null : normalizeGpa(raw, scale)
 
     const payload = {
       ...form.value,
       full_name: form.value.full_name.trim(),
-      gpa_raw: raw,
+      gpa_raw: raw || 0,
       gpa_scale: scale,
       gpa_normalized: normalized,
       ielts_overall: parseNumber(form.value.ielts_overall),

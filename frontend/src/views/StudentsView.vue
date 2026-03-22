@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useI18n } from 'vue-i18n'
@@ -14,12 +14,18 @@ const pagination = ref({
   limit: 10,
   total: 0
 })
+const searchQuery = ref('')
+let debounceTimer = null
 
 const fetchStudents = async (page = 1) => {
   loading.value = true
   try {
     const res = await api.get('/students', {
-      params: { page, limit: pagination.value.limit }
+      params: { 
+        page, 
+        limit: pagination.value.limit,
+        search: searchQuery.value
+      }
     })
     students.value = res.data.data
     pagination.value = {
@@ -33,6 +39,13 @@ const fetchStudents = async (page = 1) => {
     loading.value = false
   }
 }
+
+watch(searchQuery, () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    fetchStudents(1)
+  }, 300)
+})
 
 onMounted(() => fetchStudents())
 
@@ -87,6 +100,32 @@ const deleteStudent = async (id) => {
     alert('Delete failed')
   }
 }
+
+const exportToCSV = () => {
+  if (students.value.length === 0) return
+  
+  const headers = ['Full Name', 'Major', 'Intake', 'GPA', 'IELTS', 'SAT', 'Budget']
+  const rows = students.value.map(s => [
+    `"${s.full_name}"`,
+    `"${s.intended_major || ''}"`,
+    `"${s.target_intake || ''}"`,
+    s.gpa_raw,
+    s.ielts_overall || '',
+    s.sat_total || '',
+    s.budget_usd_per_year
+  ])
+  
+  const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n")
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.setAttribute("href", url)
+  link.setAttribute("download", `students_export_${new Date().toISOString().slice(0,10)}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 </script>
 
 <template>
@@ -95,6 +134,16 @@ const deleteStudent = async (id) => {
       <div>
         <h2 class="text-2xl font-bold text-[#18180f] tracking-tight">{{ t('students.title') }}</h2>
         <p class="text-[14px] text-[#6b6a62] mt-1">{{ t('students.subtitle') }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative shadow-sm hover-elevate rounded-lg">
+          <input v-model="searchQuery" type="text" placeholder="Search students..." class="pl-9 pr-4 py-2 text-[14px] bg-white border border-black/10 focus:border-[#a32d2d] focus:ring-2 focus:ring-[#a32d2d]/10 outline-none rounded-lg w-[240px] transition-all" />
+          <svg class="w-4 h-4 text-[#a8a79d] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <button @click="exportToCSV" class="btn-outline">
+          <svg class="w-4 h-4 text-[#6b6a62]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Export
+        </button>
       </div>
     </div>
 

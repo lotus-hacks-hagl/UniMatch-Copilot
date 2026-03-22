@@ -36,6 +36,7 @@ func NewPostgres(dsn string) (*gorm.DB, error) {
 		&model.Case{},
 		&model.Recommendation{},
 		&model.ActivityLog{},
+		&model.CaseDocument{},
 	); err != nil {
 		return nil, err
 	}

@@ -135,7 +135,14 @@
       "institution": "Institution",
       "location": "Location",
       "acceptance": "Acceptance Rate",
-      "tuition": "Tuition (Est.)"
+      "tuition": "Tuition (Est.)",
+      "status": "Sync Status",
+      "statuses": {
+        "ok": "Synced",
+        "pending": "Syncing",
+        "failed": "Failed",
+        "never_crawled": "Not Synced"
+      }
     },
     "modal": {
       "title": "Add University",

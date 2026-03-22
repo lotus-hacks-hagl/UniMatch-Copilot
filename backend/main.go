@@ -11,6 +11,7 @@ import (
 	"unimatch-be/internal/service"
 	"unimatch-be/pkg/client"
 	"unimatch-be/pkg/database"
+	"unimatch-be/pkg/filestore"
 )
 
 // @title UniMatch Copilot API
@@ -41,6 +42,10 @@ func main() {
 	actRepo := repository.NewActivityRepository(db)
 	dashRepo := repository.NewDashboardRepository(db)
 	studentRepo := repository.NewStudentRepository(db)
+	docRepo := repository.NewDocumentRepository(db)
+
+	// File store
+	store, _ := filestore.NewLocalFileStore("uploads")
 
 	// 5. Services
 	authSvc := service.NewAuthService(userRepo, cfg)
@@ -49,6 +54,7 @@ func main() {
 	dashSvc := service.NewDashboardService(dashRepo, actRepo)
 	adminSvc := service.NewAdminService(userRepo)
 	studentSvc := service.NewStudentService(studentRepo)
+	docSvc := service.NewDocumentService(docRepo, actRepo, store)
 
 	// 6. Handlers
 	authH := handler.NewAuthHandler(authSvc)
@@ -58,9 +64,10 @@ func main() {
 	internalH := handler.NewInternalHandler(caseSvc, uniSvc)
 	adminH := handler.NewAdminHandler(adminSvc)
 	studentH := handler.NewStudentHandler(studentSvc)
+	docH := handler.NewDocumentHandler(docSvc)
 
 	// 7. Router
-	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH, adminH, studentH)
+	r := router.SetupRouter(cfg, authH, casesH, uniH, dashH, internalH, adminH, studentH, docH)
 
 	log.Printf("🚀 UniMatch-BE running on :%s (env: %s)", cfg.Port, cfg.Env)
 	if err := r.Run(":" + cfg.Port); err != nil {

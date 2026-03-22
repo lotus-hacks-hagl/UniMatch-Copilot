@@ -22,6 +22,7 @@ func SetupRouter(
 	internalH *handler.InternalHandler,
 	adminH    *handler.AdminHandler,
 	studentH  *handler.StudentHandler,
+	docH      *handler.DocumentHandler,
 ) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -86,6 +87,17 @@ func SetupRouter(
 					cases.POST("/:id/report", casesH.RequestReport)
 					cases.POST("/:id/notes", casesH.AddNote)
 					cases.POST("/:id/analyze", casesH.ReAnalyze)
+					
+					// Document routes
+					cases.POST("/:id/documents", docH.Upload)
+					cases.GET("/:id/documents", docH.List)
+				}
+
+				// Global document routes
+				documents := verified.Group("/documents")
+				{
+					documents.GET("/:id", docH.Download)
+					documents.DELETE("/:id", docH.Delete)
 				}
 
 				// Universities routes
@@ -94,7 +106,9 @@ func SetupRouter(
 					unis.GET("", uniH.List)
 					unis.POST("", uniH.Create)
 					unis.POST("/crawl-all", uniH.CrawlAll)
+					unis.POST("/:id/crawl", uniH.Crawl)
 					unis.GET("/crawl-active", uniH.CrawlActiveCount)
+					unis.DELETE("/:id", uniH.Delete)
 				}
 
 				// Dashboard routes
