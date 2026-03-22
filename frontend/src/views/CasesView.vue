@@ -5,6 +5,8 @@ import { storeToRefs } from 'pinia'
 import { useCasesStore } from '../stores/casesStore'
 import { useAuthStore } from '../stores/authStore'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '../composables/useToast'
+import { formatFloat2 } from '../utils/number'
 
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement, Filler } from 'chart.js'
 import { Bar, Doughnut, Line } from 'vue-chartjs'
@@ -16,6 +18,7 @@ const casesStore = useCasesStore()
 const authStore = useAuthStore()
 const { cases, stats, filter: activeFilter } = storeToRefs(casesStore)
 const { t } = useI18n()
+const toast = useToast()
 
 const filters = ['All cases', 'Done', 'Processing', 'Human review']
 
@@ -23,9 +26,9 @@ const handleClaim = async (event, id) => {
   event.stopPropagation()
   try {
     await casesStore.claimCase(id)
-    alert('Case claimed successfully!')
+    toast.addToast(t('dialogs.caseClaimed'), 'success')
   } catch (err) {
-    alert('Failed to claim case')
+    toast.addToast(t('dialogs.claimFailed'), 'error')
   }
 }
 
@@ -267,7 +270,7 @@ onMounted(async () => {
                   </div>
                   <div>
                     <div class="font-bold text-[#18180f] group-hover:text-[#a32d2d] transition-colors">{{ c.student?.full_name }}</div>
-                    <div class="text-[12px] text-[#6b6a62] mt-0.5" v-if="c.student">GPA {{ c.student.gpa_normalized }} • IELTS {{ c.student.ielts_overall }}</div>
+                    <div class="text-[12px] text-[#6b6a62] mt-0.5" v-if="c.student">GPA {{ formatFloat2(c.student.gpa_normalized, 'N/A') }} • IELTS {{ c.student.ielts_overall ? formatFloat2(c.student.ielts_overall, 'N/A') : 'N/A' }}</div>
                   </div>
                 </div>
               </td>

@@ -2,8 +2,10 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../services/api'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const toast = useToast()
 const currentStep = ref(1)
 const isSubmitting = ref(false)
 const errors = ref({})
@@ -204,7 +206,7 @@ const submitForm = async () => {
   } catch (error) {
     console.error('Failed to create case:', error)
     const backendMessage = error.response?.data?.error?.details || error.response?.data?.error?.message
-    alert(backendMessage || 'Failed to submit form.')
+    toast.addToast(backendMessage || 'Failed to submit form.', 'error')
   } finally {
     isSubmitting.value = false
   }

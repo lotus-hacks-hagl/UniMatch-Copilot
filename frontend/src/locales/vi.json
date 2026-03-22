@@ -26,6 +26,28 @@
     "export": "Xuất dữ liệu",
     "syncing": "Đang đồng bộ {count} ĐH"
   },
+  "dialogs": {
+    "cancel": "Huỷ",
+    "delete": "Xoá",
+    "deleteFailed": "Xoá thất bại",
+    "updateFailed": "Cập nhật thất bại",
+    "claimFailed": "Nhận hồ sơ thất bại",
+    "caseClaimed": "Đã nhận hồ sơ thành công!",
+    "summaryUpdated": "Đã cập nhật nội dung!",
+    "reportTriggered": "Đã yêu cầu tạo report.",
+    "reportFailed": "Yêu cầu tạo report thất bại.",
+    "noteFailed": "Thêm ghi chú thất bại.",
+    "reanalyze": "Phân tích lại",
+    "reanalyzeTitle": "Phân tích lại hồ sơ?",
+    "reanalyzeMessage": "Thao tác này sẽ xoá các đề xuất hiện tại và chạy AI phân tích lại.",
+    "reanalyzeTriggered": "Đã kích hoạt phân tích lại.",
+    "reanalyzeFailed": "Kích hoạt phân tích lại thất bại.",
+    "studentUpdated": "Cập nhật sinh viên thành công!",
+    "studentDeleted": "Đã xoá sinh viên.",
+    "deleteStudentTitle": "Xoá sinh viên?",
+    "deleteStudentMessage": "Thao tác này không thể hoàn tác.",
+    "deleteUniversityTitle": "Xoá trường đại học?"
+  },
   "caseDetail": {
     "loading": "Đang tải chi tiết hồ sơ...",
     "student": "Sinh viên",

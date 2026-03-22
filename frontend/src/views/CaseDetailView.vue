@@ -3,6 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { usePolling } from '../composables/usePolling'
+import { useToast } from '../composables/useToast'
+import { useDialog } from '../composables/useDialog'
+import { formatFloat2 } from '../utils/number'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/authStore'
 import { useCasesStore } from '../stores/casesStore'
@@ -10,6 +13,8 @@ import { useCasesStore } from '../stores/casesStore'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const toast = useToast()
+const dialog = useDialog()
 const authStore = useAuthStore()
 const casesStore = useCasesStore()
 
@@ -96,9 +101,9 @@ const handleClaim = async () => {
   try {
     await casesStore.claimCase(route.params.id)
     await fetchCase()
-    alert('Case claimed successfully!')
+    toast.addToast(t('dialogs.caseClaimed'), 'success')
   } catch (err) {
-    alert('Failed to claim case')
+    toast.addToast(t('dialogs.claimFailed'), 'error')
   }
 }
 
@@ -106,19 +111,19 @@ const updateReport = async () => {
   try {
     const summary = { ...caseData.value.profile_summary, main_opinion: editedSummary.value }
     await api.put(`/cases/${route.params.id}`, { profile_summary: summary })
-    alert('Summary updated!')
+    toast.addToast(t('dialogs.summaryUpdated'), 'success')
     await fetchCase()
   } catch (err) {
-    alert('Update failed')
+    toast.addToast(t('dialogs.updateFailed'), 'error')
   }
 }
 
 const generateReport = async () => {
   try {
     await api.post(`/cases/${route.params.id}/report`)
-    alert('Report generation triggered successfully.')
+    toast.addToast(t('dialogs.reportTriggered'), 'success')
   } catch (err) {
-    alert('Failed to trigger report.')
+    toast.addToast(t('dialogs.reportFailed'), 'error')
   }
 }
 
@@ -132,7 +137,7 @@ const addNote = async () => {
     noteText.value = ''
     await fetchCase()
   } catch (err) {
-    alert('Failed to add note')
+    toast.addToast(t('dialogs.noteFailed'), 'error')
   } finally {
     isAddingNote.value = false
   }
@@ -140,11 +145,18 @@ const addNote = async () => {
 
 const isReAnalyzing = ref(false)
 const reAnalyze = async () => {
-  if (!confirm('This will clear current recommendations and trigger a new AI analysis. Continue?')) return
+  const ok = await dialog.confirm({
+    title: t('dialogs.reanalyzeTitle'),
+    message: t('dialogs.reanalyzeMessage'),
+    variant: 'danger',
+    confirmText: t('dialogs.reanalyze'),
+    cancelText: t('dialogs.cancel')
+  })
+  if (!ok) return
   isReAnalyzing.value = true
   try {
     await api.post(`/cases/${route.params.id}/analyze`)
-    alert('Re-analysis triggered!')
+    toast.addToast(t('dialogs.reanalyzeTriggered'), 'success')
     await fetchCase()
     // Start polling if not already polling
     if (!pollTimer) {
@@ -157,7 +169,7 @@ const reAnalyze = async () => {
       }, 3000)
     }
   } catch (err) {
-    alert('Failed to trigger re-analysis')
+    toast.addToast(t('dialogs.reanalyzeFailed'), 'error')
   } finally {
     isReAnalyzing.value = false
   }
@@ -237,11 +249,11 @@ const reAnalyze = async () => {
               <div class="grid grid-cols-2 gap-y-6 gap-x-4 mb-6">
                 <div>
                   <div class="text-[11px] text-[#8a8980] font-bold mb-1 uppercase tracking-wider">{{ $t('caseDetail.gpaNorm') }}</div>
-                  <div class="text-[15px] font-bold text-[#18180f]">{{ caseData.student?.gpa_normalized || 'N/A' }}</div>
+                  <div class="text-[15px] font-bold text-[#18180f]">{{ caseData.student ? formatFloat2(caseData.student.gpa_normalized, 'N/A') : 'N/A' }}</div>
                 </div>
                 <div>
                   <div class="text-[11px] text-[#8a8980] font-bold mb-1 uppercase tracking-wider">{{ $t('caseDetail.ielts') }}</div>
-                  <div class="text-[15px] font-bold text-[#18180f]">{{ caseData.student?.ielts_overall || 'N/A' }}</div>
+                  <div class="text-[15px] font-bold text-[#18180f]">{{ caseData.student && caseData.student.ielts_overall ? formatFloat2(caseData.student.ielts_overall, 'N/A') : 'N/A' }}</div>
                 </div>
                 <div>
                   <div class="text-[11px] text-[#8a8980] font-bold mb-1 uppercase tracking-wider">{{ $t('caseDetail.budget') }}</div>

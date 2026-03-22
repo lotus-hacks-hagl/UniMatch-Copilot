@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { authService } from '../services/authService'
+import { useToast } from '../composables/useToast'
 
 const teachers = ref([])
 const loading = ref(true)
+const toast = useToast()
 
 const pendingCount = computed(() => teachers.value.filter(t => !t.is_verified).length)
 const verifiedCount = computed(() => teachers.value.filter(t => t.is_verified).length)
@@ -29,7 +31,7 @@ const handleVerify = async (id, status) => {
       teachers.value[index].is_verified = status
     }
   } catch (err) {
-    alert('Failed to update verification status')
+    toast.addToast('Failed to update verification status', 'error')
   }
 }
 

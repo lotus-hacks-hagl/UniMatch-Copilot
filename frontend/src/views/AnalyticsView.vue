@@ -30,7 +30,7 @@ const fetchAnalytics = async () => {
       }))
 
       analytics.value = {
-        placementRate: data.auto_approval_rate ? data.auto_approval_rate.toFixed(1) + '%' : '—',
+        placementRate: data.auto_approval_rate ? data.auto_approval_rate.toFixed(2) + '%' : '—',
         avgScholarship: '$22,400', // Beautiful fallback
         timeSaved: '156 hrs',      // Beautiful fallback
         satisfaction: '4.9/5',     // Beautiful fallback

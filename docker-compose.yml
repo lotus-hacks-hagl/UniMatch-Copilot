@@ -46,17 +46,17 @@ services:
       - ai-service-go
     restart: unless-stopped
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: unimatch-frontend-local:latest
-    container_name: unimatch_frontend
-    ports:
-      - "5173:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   image: unimatch-frontend-local:latest
+  #   container_name: unimatch_frontend
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:

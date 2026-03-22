@@ -26,6 +26,28 @@
     "export": "Export",
     "syncing": "Syncing {count} universities"
   },
+  "dialogs": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleteFailed": "Delete failed",
+    "updateFailed": "Update failed",
+    "claimFailed": "Failed to claim case",
+    "caseClaimed": "Case claimed successfully!",
+    "summaryUpdated": "Summary updated!",
+    "reportTriggered": "Report generation triggered.",
+    "reportFailed": "Failed to trigger report.",
+    "noteFailed": "Failed to add note.",
+    "reanalyze": "Re-analyze",
+    "reanalyzeTitle": "Re-analyze this case?",
+    "reanalyzeMessage": "This will clear current recommendations and trigger a new AI analysis.",
+    "reanalyzeTriggered": "Re-analysis triggered.",
+    "reanalyzeFailed": "Failed to trigger re-analysis.",
+    "studentUpdated": "Student updated successfully!",
+    "studentDeleted": "Student deleted.",
+    "deleteStudentTitle": "Delete student?",
+    "deleteStudentMessage": "This action cannot be undone.",
+    "deleteUniversityTitle": "Delete university?"
+  },
   "caseDetail": {
     "loading": "Loading case details...",
     "student": "Student",

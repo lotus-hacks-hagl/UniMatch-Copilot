@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { api } from '../services/api'
 import { useToast } from '../composables/useToast'
+import { useDialog } from '../composables/useDialog'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -9,6 +10,7 @@ const kbs = ref([])
 const totalKbs = ref(0)
 const loading = ref(true)
 const toast = useToast()
+const dialog = useDialog()
 
 const showModal = ref(false)
 const isEditing = ref(false)
@@ -58,7 +60,7 @@ const fetchUniversities = async (page = 1) => {
       name: u.name,
       location: u.country || 'N/A',
       rank: u.qs_rank || '-',
-      acceptance: u.acceptance_rate ? (u.acceptance_rate * 100).toFixed(1) + '%' : 'N/A',
+      acceptance: u.acceptance_rate ? (u.acceptance_rate * 100).toFixed(2) + '%' : 'N/A',
       tuition: u.tuition_usd_per_year ? `$${u.tuition_usd_per_year}` : 'N/A'
     }))
     kbs.value = uniList
@@ -113,7 +115,14 @@ const updateUniversity = async () => {
 }
 
 const deleteUniversity = async (id) => {
-  if (!confirm(t('universityKb.confirmDelete'))) return
+  const ok = await dialog.confirm({
+    title: t('dialogs.deleteUniversityTitle'),
+    message: t('universityKb.confirmDelete'),
+    variant: 'danger',
+    confirmText: t('dialogs.delete'),
+    cancelText: t('dialogs.cancel')
+  })
+  if (!ok) return
   try {
     await api.delete(`/universities/${id}`)
     toast.addToast(t('universityKb.toasts.deleteSuccess'), 'success')
@@ -171,64 +180,67 @@ const runSync = async () => {
           <p class="text-[14px] text-[#6b6a62]">Run a sync or manually add your first university institution.</p>
         </div>
 
-        <table v-else class="w-full text-left border-collapse">
-          <thead>
-            <tr class="text-[12px] text-[#8a8980] uppercase tracking-wider border-b border-black/5 bg-[#fafafa]">
-              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.rank') }}</th>
-              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.institution') }}</th>
-              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.location') }}</th>
-              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.acceptance') }}</th>
-              <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.tuition') }}</th>
-              <th class="px-6 py-4 font-bold text-right">Actions</th>
-            </tr>
-          </thead>
-          <TransitionGroup name="list" tag="tbody" class="divide-y divide-black/5 text-[14px]">
-            <tr v-for="kb in kbs" :key="kb.id" class="hover:bg-gray-50/80 transition-colors cursor-pointer group">
-              <td class="px-6 py-4 min-w-[100px]">
-                <div v-if="kb.rank !== '-'" class="w-10 h-10 rounded-full bg-[#f4f5f7] text-[#18180f] font-bold flex items-center justify-center border border-black/5">#{{ kb.rank }}</div>
-                <div v-else class="w-10 h-10 rounded-full bg-gray-50 text-[#8a8980] font-bold flex items-center justify-center border border-black/5">-</div>
-              </td>
-              <td class="px-6 py-4 font-bold text-[#18180f] group-hover:text-[#a32d2d] transition-colors">{{ kb.name }}</td>
-              <td class="px-6 py-4 text-[#6b6a62]">{{ kb.location }}</td>
-              <td class="px-6 py-4">
-                <span v-if="kb.acceptance !== 'N/A'" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e8f5e9] text-[#2e7d32]">{{ kb.acceptance }}</span>
-                <span v-else class="text-[#8a8980] text-[12px] italic">-</span>
-              </td>
-              <td class="px-6 py-4 font-bold text-[#18180f]">{{ kb.tuition !== 'N/A' ? kb.tuition + '/yr' : '-' }}</td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-2">
-                   <button @click.stop="openEditModal(kb)" class="p-2 hover:bg-[#a32d2d]/10 rounded-lg text-[#6b6a62] hover:text-[#a32d2d] transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                   </button>
-                   <button @click.stop="deleteUniversity(kb.id)" class="p-2 hover:bg-red-100 rounded-lg text-[#6b6a62] hover:text-red-600 transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                   </button>
-                </div>
-              </td>
-            </tr>
-          </TransitionGroup>
-        </table>
+        <div v-else class="flex-1 flex flex-col">
+          <div class="overflow-x-auto flex-1">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="text-[12px] text-[#8a8980] uppercase tracking-wider border-b border-black/5 bg-[#fafafa]">
+                  <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.rank') }}</th>
+                  <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.institution') }}</th>
+                  <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.location') }}</th>
+                  <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.acceptance') }}</th>
+                  <th class="px-6 py-4 font-bold">{{ $t('universityKb.table.tuition') }}</th>
+                  <th class="px-6 py-4 font-bold text-right">Actions</th>
+                </tr>
+              </thead>
+              <TransitionGroup name="list" tag="tbody" class="divide-y divide-black/5 text-[14px]">
+                <tr v-for="kb in kbs" :key="kb.id" class="hover:bg-gray-50/80 transition-colors cursor-pointer group">
+                  <td class="px-6 py-4 min-w-[100px]">
+                    <div v-if="kb.rank !== '-'" class="w-10 h-10 rounded-full bg-[#f4f5f7] text-[#18180f] font-bold flex items-center justify-center border border-black/5">#{{ kb.rank }}</div>
+                    <div v-else class="w-10 h-10 rounded-full bg-gray-50 text-[#8a8980] font-bold flex items-center justify-center border border-black/5">-</div>
+                  </td>
+                  <td class="px-6 py-4 font-bold text-[#18180f] group-hover:text-[#a32d2d] transition-colors">{{ kb.name }}</td>
+                  <td class="px-6 py-4 text-[#6b6a62]">{{ kb.location }}</td>
+                  <td class="px-6 py-4">
+                    <span v-if="kb.acceptance !== 'N/A'" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#e8f5e9] text-[#2e7d32]">{{ kb.acceptance }}</span>
+                    <span v-else class="text-[#8a8980] text-[12px] italic">-</span>
+                  </td>
+                  <td class="px-6 py-4 font-bold text-[#18180f]">{{ kb.tuition !== 'N/A' ? kb.tuition + '/yr' : '-' }}</td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button @click.stop="openEditModal(kb)" class="p-2 hover:bg-[#a32d2d]/10 rounded-lg text-[#6b6a62] hover:text-[#a32d2d] transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                      </button>
+                      <button @click.stop="deleteUniversity(kb.id)" class="p-2 hover:bg-red-100 rounded-lg text-[#6b6a62] hover:text-red-600 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </TransitionGroup>
+            </table>
+          </div>
 
-        <!-- Pagination -->
-        <div v-if="pagination.total > pagination.limit" class="px-6 py-4 border-t border-black/5 flex items-center justify-between bg-[#fafafa]">
-          <span class="text-[13px] font-medium text-[#6b6a62]">
-            Showing <span class="text-[#18180f] font-bold">{{ (pagination.page - 1) * pagination.limit + 1 }}</span> to <span class="text-[#18180f] font-bold">{{ Math.min(pagination.page * pagination.limit, pagination.total) }}</span> of <span class="text-[#18180f] font-bold">{{ pagination.total }}</span> universities
-          </span>
-          <div class="flex gap-2">
-            <button 
-              @click="fetchUniversities(pagination.page - 1)" 
-              :disabled="pagination.page === 1"
-              class="btn-outline px-3 py-1.5 disabled:opacity-50 hover:-translate-y-0"
-            >
-              Prev
-            </button>
-            <button 
-              @click="fetchUniversities(pagination.page + 1)" 
-              :disabled="pagination.page * pagination.limit >= pagination.total"
-              class="btn-outline px-3 py-1.5 disabled:opacity-50 hover:-translate-y-0"
-            >
-              Next
-            </button>
+          <div v-if="pagination.total > pagination.limit" class="px-6 py-4 border-t border-black/5 flex items-center justify-between bg-[#fafafa]">
+            <span class="text-[13px] font-medium text-[#6b6a62]">
+              Showing <span class="text-[#18180f] font-bold">{{ (pagination.page - 1) * pagination.limit + 1 }}</span> to <span class="text-[#18180f] font-bold">{{ Math.min(pagination.page * pagination.limit, pagination.total) }}</span> of <span class="text-[#18180f] font-bold">{{ pagination.total }}</span> universities
+            </span>
+            <div class="flex gap-2">
+              <button
+                @click="fetchUniversities(pagination.page - 1)"
+                :disabled="pagination.page === 1"
+                class="btn-outline px-3 py-1.5 disabled:opacity-50 hover:-translate-y-0"
+              >
+                Prev
+              </button>
+              <button
+                @click="fetchUniversities(pagination.page + 1)"
+                :disabled="pagination.page * pagination.limit >= pagination.total"
+                class="btn-outline px-3 py-1.5 disabled:opacity-50 hover:-translate-y-0"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </Transition>

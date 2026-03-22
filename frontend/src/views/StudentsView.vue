@@ -3,10 +3,15 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useI18n } from 'vue-i18n'
+import { useToast } from '../composables/useToast'
+import { useDialog } from '../composables/useDialog'
+import { formatFloat2 } from '../utils/number'
 
 const router = useRouter()
 
 const { t } = useI18n()
+const toast = useToast()
+const dialog = useDialog()
 const students = ref([])
 const loading = ref(true)
 const pagination = ref({
@@ -69,22 +74,29 @@ const closeEditModal = () => {
 const saveStudent = async () => {
   try {
     await api.put(`/students/${editingStudent.value.id}`, editForm.value)
-    alert('Student updated successfully!')
+    toast.addToast(t('dialogs.studentUpdated'), 'success')
     closeEditModal()
     await fetchStudents(pagination.value.page)
   } catch (err) {
-    alert('Update failed')
+    toast.addToast(t('dialogs.updateFailed'), 'error')
   }
 }
 
 const deleteStudent = async (id) => {
-  if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return
+  const ok = await dialog.confirm({
+    title: t('dialogs.deleteStudentTitle'),
+    message: t('dialogs.deleteStudentMessage'),
+    variant: 'danger',
+    confirmText: t('dialogs.delete'),
+    cancelText: t('dialogs.cancel')
+  })
+  if (!ok) return
   try {
     await api.delete(`/students/${id}`)
-    alert('Student deleted!')
+    toast.addToast(t('dialogs.studentDeleted'), 'success')
     await fetchStudents(pagination.value.page)
   } catch (err) {
-    alert('Delete failed')
+    toast.addToast(t('dialogs.deleteFailed'), 'error')
   }
 }
 </script>
@@ -141,12 +153,12 @@ const deleteStudent = async (id) => {
                   </td>
                   <td class="px-6 py-4 font-medium text-[#18180f]">{{ s.target_intake || '-' }}</td>
                   <td class="px-6 py-4">
-                    <div class="font-bold text-[#18180f]">{{ s.gpa_raw || 0 }} <span class="text-[12px] text-[#8a8980] font-normal">/ {{ s.gpa_scale || '4.0' }}</span></div>
-                    <div class="text-[12px] text-[#6b6a62] mt-0.5">Norm: {{ s.gpa_normalized?.toFixed(2) || '0.00' }}</div>
+                    <div class="font-bold text-[#18180f]">{{ formatFloat2(s.gpa_raw) }} <span class="text-[12px] text-[#8a8980] font-normal">/ {{ s.gpa_scale || '4.0' }}</span></div>
+                    <div class="text-[12px] text-[#6b6a62] mt-0.5">Norm: {{ formatFloat2(s.gpa_normalized) }}</div>
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex flex-wrap gap-2">
-                      <span v-if="s.ielts_overall" class="px-2.5 py-1 rounded text-[11px] font-bold bg-[#e8f5e9] text-[#2e7d32]">IELTS {{ s.ielts_overall }}</span>
+                      <span v-if="s.ielts_overall" class="px-2.5 py-1 rounded text-[11px] font-bold bg-[#e8f5e9] text-[#2e7d32]">IELTS {{ formatFloat2(s.ielts_overall) }}</span>
                       <span v-if="s.sat_total" class="px-2.5 py-1 rounded text-[11px] font-bold bg-[#fff8e1] text-[#f57f17]">SAT {{ s.sat_total }}</span>
                       <span v-if="!s.ielts_overall && !s.sat_total" class="text-[12px] text-[#8a8980] italic">-</span>
                     </div>
