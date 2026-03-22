@@ -34,7 +34,7 @@ async def process_crawl_job(job: dict):
             "Missing EXA_API_KEY in environment. Configure it in ai_service/.env and restart containers."
         )
 
-    update_job(job_id, "processing")
+    await update_job(job_id, "processing")
 
     known_fields = {k: v for k, v in metadata.items() if v is not None}
     null_fields = [k for k, v in metadata.items() if v is None]
@@ -72,6 +72,7 @@ and write them to Neo4j using write_neo4j_cypher.
         system_prompt={
             "type": "preset",
             "preset": "claude_code",
+            "append": system_prompt,
         },
         permission_mode="bypassPermissions",
         env=build_claude_cli_env(),
@@ -187,7 +188,7 @@ and write them to Neo4j using write_neo4j_cypher.
             "No callback_url for optional crawl job_id=%s; skipping done callback",
             job_id,
         )
-    update_job(job_id, "done", result=result)
+    await update_job(job_id, "done", result=result)
 
 
 crawl_worker_loop = make_worker_loop("crawl_university", process_crawl_job)

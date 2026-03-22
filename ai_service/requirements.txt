@@ -11,3 +11,4 @@ anthropic
 pydantic
 requests
 tf-playwright-stealth
+asyncpg
